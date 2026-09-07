@@ -1,0 +1,196 @@
+@import "tailwindcss";
+
+:root {
+  --surface-0: oklch(99% 0.002 250);
+  --surface-1: oklch(97% 0.003 250);
+  --surface-2: oklch(94% 0.004 250);
+  --surface-3: oklch(90% 0.005 250);
+  --border-subtle: oklch(88% 0.005 250);
+  --border-default: oklch(82% 0.006 250);
+  --text-primary: oklch(20% 0.01 250);
+  --text-secondary: oklch(42% 0.01 250);
+  --text-tertiary: oklch(58% 0.01 250);
+
+  --accent: oklch(46% 0.13 240);
+  --accent-strong: oklch(38% 0.14 240);
+  --accent-soft: oklch(93% 0.03 240);
+  --accent-contrast: oklch(99% 0.005 240);
+
+  --verdict-legitimate: oklch(52% 0.13 155);
+  --verdict-legitimate-soft: oklch(94% 0.05 155);
+  --verdict-newsletter: oklch(62% 0.14 75);
+  --verdict-newsletter-soft: oklch(94% 0.06 75);
+  --verdict-spam: oklch(55% 0.01 250);
+  --verdict-spam-soft: oklch(92% 0.004 250);
+  --verdict-phishing: oklch(52% 0.19 25);
+  --verdict-phishing-soft: oklch(93% 0.06 25);
+
+  --focus-ring: oklch(46% 0.13 240 / 0.5);
+  --shadow-color: 250 15% 10%;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --account-color-0: oklch(58% 0.15 25);
+  --account-color-1: oklch(60% 0.14 70);
+  --account-color-2: oklch(62% 0.13 130);
+  --account-color-3: oklch(58% 0.11 170);
+  --account-color-4: oklch(55% 0.13 235);
+  --account-color-5: oklch(56% 0.16 290);
+  --account-color-6: oklch(58% 0.18 330);
+  --account-color-7: oklch(52% 0.02 250);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface-0: oklch(18% 0.006 250);
+    --surface-1: oklch(21% 0.006 250);
+    --surface-2: oklch(25% 0.007 250);
+    --surface-3: oklch(29% 0.008 250);
+    --border-subtle: oklch(30% 0.007 250);
+    --border-default: oklch(37% 0.008 250);
+    --text-primary: oklch(95% 0.003 250);
+    --text-secondary: oklch(78% 0.005 250);
+    --text-tertiary: oklch(60% 0.006 250);
+
+    --accent: oklch(72% 0.11 235);
+    --accent-strong: oklch(80% 0.1 235);
+    --accent-soft: oklch(28% 0.05 235);
+    --accent-contrast: oklch(14% 0.01 235);
+
+    --verdict-legitimate: oklch(75% 0.13 155);
+    --verdict-legitimate-soft: oklch(28% 0.05 155);
+    --verdict-newsletter: oklch(78% 0.12 80);
+    --verdict-newsletter-soft: oklch(30% 0.05 80);
+    --verdict-spam: oklch(70% 0.006 250);
+    --verdict-spam-soft: oklch(27% 0.006 250);
+    --verdict-phishing: oklch(72% 0.17 25);
+    --verdict-phishing-soft: oklch(30% 0.08 25);
+  }
+}
+
+:root[data-theme="dark"] {
+  --surface-0: oklch(18% 0.006 250);
+  --surface-1: oklch(21% 0.006 250);
+  --surface-2: oklch(25% 0.007 250);
+  --surface-3: oklch(29% 0.008 250);
+  --border-subtle: oklch(30% 0.007 250);
+  --border-default: oklch(37% 0.008 250);
+  --text-primary: oklch(95% 0.003 250);
+  --text-secondary: oklch(78% 0.005 250);
+  --text-tertiary: oklch(60% 0.006 250);
+
+  --accent: oklch(72% 0.11 235);
+  --accent-strong: oklch(80% 0.1 235);
+  --accent-soft: oklch(28% 0.05 235);
+  --accent-contrast: oklch(14% 0.01 235);
+
+  --verdict-legitimate: oklch(75% 0.13 155);
+  --verdict-legitimate-soft: oklch(28% 0.05 155);
+  --verdict-newsletter: oklch(78% 0.12 80);
+  --verdict-newsletter-soft: oklch(30% 0.05 80);
+  --verdict-spam: oklch(70% 0.006 250);
+  --verdict-spam-soft: oklch(27% 0.006 250);
+  --verdict-phishing: oklch(72% 0.17 25);
+  --verdict-phishing-soft: oklch(30% 0.08 25);
+}
+
+@theme inline {
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-verdict-legitimate: var(--verdict-legitimate);
+  --color-verdict-legitimate-soft: var(--verdict-legitimate-soft);
+  --color-verdict-newsletter: var(--verdict-newsletter);
+  --color-verdict-newsletter-soft: var(--verdict-newsletter-soft);
+  --color-verdict-spam: var(--verdict-spam);
+  --color-verdict-spam-soft: var(--verdict-spam-soft);
+  --color-verdict-phishing: var(--verdict-phishing);
+  --color-verdict-phishing-soft: var(--verdict-phishing-soft);
+  --color-account-0: var(--account-color-0);
+  --color-account-1: var(--account-color-1);
+  --color-account-2: var(--account-color-2);
+  --color-account-3: var(--account-color-3);
+  --color-account-4: var(--account-color-4);
+  --color-account-5: var(--account-color-5);
+  --color-account-6: var(--account-color-6);
+  --color-account-7: var(--account-color-7);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-mono-body);
+}
+
+body {
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: var(--border-subtle);
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

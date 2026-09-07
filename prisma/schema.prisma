@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Provider {
+  GOOGLE
+  MICROSOFT
+}
+
+enum AccountStatus {
+  ACTIVE
+  NEEDS_RECONSENT
+  ERROR
+}
+
+enum Verdict {
+  LEGITIMATE
+  NEWSLETTER
+  SPAM
+  PHISHING
+}
+
+enum MessageState {
+  INBOX
+  QUARANTINED
+  TRASHED
+  KEPT
+  ORGANIZED
+}
+
+enum PolicyScope {
+  ADDRESS
+  DOMAIN
+}
+
+enum PolicyVerdict {
+  ALLOW
+  BLOCK
+}
+
+enum FindingKind {
+  AUTO_FORWARD
+  INBOX_RULE_FORWARD
+  DELEGATE
+  ALT_ADDRESS
+  IMAP_POP_ENABLED
+  VACATION_SUSPICIOUS
+}
+
+enum FindingSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum SyncKind {
+  FULL
+  INCREMENTAL
+}
+
+enum AuditActor {
+  USER
+  ENGINE
+}
+
+model Account {
+  id                String        @id @default(cuid())
+  provider          Provider
+  providerAccountId String
+  emailAddress      String
+  displayName       String?
+  colorToken        String
+  accessTokenEnc    String
+  refreshTokenEnc   String
+  tokenExpiresAt    DateTime
+  scopes            String
+  status            AccountStatus @default(ACTIVE)
+  gmailHistoryId    String?
+  graphDeltaLink    String?
+  lastSyncAt        DateTime?
+  createdAt         DateTime      @default(now())
+
+  messages         Message[]
+  syncRuns         SyncRun[]
+  securityFindings SecurityFinding[]
+  senderPolicies   SenderPolicy[]
+
+  @@unique([provider, providerAccountId])
+}
+
+model Message {
+  id                 String       @id @default(cuid())
+  accountId          String
+  account            Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  providerMessageId  String
+  threadId           String
+  internetMessageId  String?
+
+  fromAddress        String
+  fromDomain         String
+  fromDisplayName    String?
+  replyToDomain      String?
+  toCount            Int          @default(1)
+  subject            String
+  snippet            String?
+  receivedAt         DateTime
+  isRead             Boolean      @default(false)
+  hasAttachments     Boolean      @default(false)
+  attachmentTypes    String?
+
+  listUnsubscribe    String?
+  listUnsubscribePost String?
+  listId             String?
+  precedence         String?
+
+  authSpf            String?
+  authDkim           String?
+  authDmarc          String?
+  providerSpamFlag   Boolean      @default(false)
+  providerFolder     String?
+  providerLabels     String?
+
+  verdict            Verdict?
+  score              Float?
+  state              MessageState @default(INBOX)
+  classifiedAt       DateTime?
+
+  signals            MessageSignal[]
+  quarantineItem     QuarantineItem?
+
+  @@unique([accountId, providerMessageId])
+  @@index([accountId, receivedAt])
+  @@index([accountId, state])
+}
+
+model MessageSignal {
+  id        String  @id @default(cuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  ruleId    String
+  label     String
+  weight    Float
+  detail    String?
+
+  @@index([messageId])
+}
+
+model QuarantineItem {
+  id              String    @id @default(cuid())
+  messageId       String    @unique
+  message         Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  accountId       String
+  quarantinedAt   DateTime  @default(now())
+  purgeAfter      DateTime
+  reason          String
+  restoreSnapshot String
+  restoredAt      DateTime?
+  purgedAt        DateTime?
+
+  @@index([purgeAfter])
+}
+
+model SenderPolicy {
+  id        String        @id @default(cuid())
+  scope     PolicyScope
+  pattern   String
+  verdict   PolicyVerdict
+  accountId String?
+  account   Account?      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@index([pattern])
+}
+
+model SecurityFinding {
+  id             String          @id @default(cuid())
+  accountId      String
+  account        Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  kind           FindingKind
+  severity       FindingSeverity
+  externalTarget String?
+  rawConfig      String
+  firstSeenAt    DateTime        @default(now())
+  lastSeenAt     DateTime        @default(now())
+  acknowledgedAt DateTime?
+  resolvedAt     DateTime?
+
+  @@index([accountId, resolvedAt])
+}
+
+model SyncRun {
+  id           String    @id @default(cuid())
+  accountId    String
+  account      Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  kind         SyncKind
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  messagesSeen Int       @default(0)
+  error        String?
+
+  @@index([accountId, startedAt])
+}
+
+model AuditLog {
+  id         String     @id @default(cuid())
+  at         DateTime   @default(now())
+  actor      AuditActor
+  action     String
+  accountId  String?
+  messageIds String
+  before     String?
+  after      String?
+}
+
+model AppSetting {
+  key   String @id
+  value String
+}
