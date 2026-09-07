@@ -4,6 +4,23 @@ A local, privacy-first mail-triage dashboard for Gmail and Outlook/Microsoft 365
 
 **Single-user • Local-only • Self-hosted • No tracking**
 
+## Screenshots
+
+*All screenshots below use fictional demo data — no real mailbox content.*
+
+![Unified inbox](docs/screenshots/unified-inbox.png)
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/quarantine.png" alt="Quarantine view" /><br/><sub>Quarantine — suspicious mail, always recoverable</sub></td>
+<td width="50%"><img src="docs/screenshots/security-audit.png" alt="Security audit" /><br/><sub>Security audit — suspicious forwarding rules</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/accounts.png" alt="Accounts page" /><br/><sub>Multi-account management</sub></td>
+<td width="50%"><img src="docs/screenshots/spam-filter.png" alt="Spam filter view" /><br/><sub>Filtered by verdict</sub></td>
+</tr>
+</table>
+
 ## What It Does
 
 MailGuard connects to your own Gmail and Outlook accounts via OAuth (you create the app registrations) and runs entirely on your machine. It:
