@@ -37,7 +37,7 @@ export function TrashAllJunkButton() {
       type="button"
       onClick={handleClick}
       disabled={busy || isPending}
-      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-verdict-phishing/40 px-3 text-[13px] font-medium text-verdict-phishing transition-colors hover:bg-verdict-phishing-soft disabled:opacity-60"
+      className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-verdict-phishing/40 px-3 text-[13px] font-medium text-verdict-phishing transition-colors hover:bg-verdict-phishing-soft disabled:opacity-60"
     >
       <Trash2 className={cn("h-3.5 w-3.5", busy && "animate-pulse")} strokeWidth={1.75} />
       Supprimer le courrier indésirable

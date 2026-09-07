@@ -37,7 +37,7 @@ export function UnsubscribeAllButton() {
       type="button"
       onClick={handleClick}
       disabled={busy || isPending}
-      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border-default px-3 text-[13px] font-medium text-text-primary transition-colors hover:bg-surface-2 disabled:opacity-60"
+      className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-border-default px-3 text-[13px] font-medium text-text-primary transition-colors hover:bg-surface-2 disabled:opacity-60"
     >
       <MailX className={cn("h-3.5 w-3.5", busy && "animate-pulse")} strokeWidth={1.75} />
       Se désabonner de tout

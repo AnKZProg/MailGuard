@@ -17,7 +17,7 @@ A local, privacy-first mail-triage dashboard for Gmail and Outlook/Microsoft 365
 </tr>
 <tr>
 <td width="50%"><img src="docs/screenshots/accounts.png" alt="Accounts page" /><br/><sub>Multi-account management</sub></td>
-<td width="50%"><img src="docs/screenshots/spam-filter.png" alt="Spam filter view" /><br/><sub>Filtered by verdict</sub></td>
+<td width="50%"><img src="docs/screenshots/newsletter-filter.png" alt="Newsletter filter view" /><br/><sub>Newsletters — bulk unsubscribe/delete</sub></td>
 </tr>
 </table>
 
