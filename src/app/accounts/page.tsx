@@ -6,6 +6,7 @@ import { FlashBanner } from "@/components/accounts/FlashBanner";
 import { AccountRow } from "@/components/accounts/AccountRow";
 import { ShadowModeToggle } from "@/components/accounts/ShadowModeToggle";
 import { FileNewMailButton } from "@/components/accounts/FileNewMailButton";
+import { OrganizeAllBySenderButton } from "@/components/accounts/OrganizeAllBySenderButton";
 import { TrashAllJunkButton } from "@/components/accounts/TrashAllJunkButton";
 
 export default async function AccountsPage({
@@ -53,6 +54,17 @@ export default async function AccountsPage({
             </p>
           </div>
           <FileNewMailButton />
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-1 px-4 py-3">
+          <div>
+            <p className="text-[13px] font-medium text-text-primary">Dossiers par marque</p>
+            <p className="text-[12px] text-text-secondary">
+              Scanne toute la boîte de réception de chaque compte connecté et crée (ou réutilise) un dossier
+              MailGuard &gt; Marques par expéditeur récurrent, sur tous les comptes.
+            </p>
+          </div>
+          <OrganizeAllBySenderButton />
         </div>
 
         <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-1 px-4 py-3">

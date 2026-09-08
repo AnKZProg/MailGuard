@@ -163,3 +163,26 @@ async function runOrganizeAccountBySender(accountId: string): Promise<OrganizeBy
 
   return { scanned, groups: qualifying.length, moved, failed, foldersCreated, foldersReused };
 }
+
+/**
+ * Runs organizeAccountBySender across every connected account, one at a time
+ * (each call already scans a whole live mailbox — running accounts
+ * concurrently would just multiply provider rate-limit and SQLite
+ * write-lock pressure for no real speedup). Used by the "create/update brand
+ * folders" button so a newly connected account gets the same MailGuard >
+ * Marques structure as the others without visiting each account row.
+ */
+export async function organizeAllAccountsBySender(): Promise<OrganizeBySenderSummary> {
+  const accounts = await db.account.findMany({ where: { status: "ACTIVE" }, select: { id: true } });
+  const totals: OrganizeBySenderSummary = { scanned: 0, groups: 0, moved: 0, failed: 0, foldersCreated: 0, foldersReused: 0 };
+  for (const account of accounts) {
+    const summary = await organizeAccountBySender(account.id);
+    totals.scanned += summary.scanned;
+    totals.groups += summary.groups;
+    totals.moved += summary.moved;
+    totals.failed += summary.failed;
+    totals.foldersCreated += summary.foldersCreated;
+    totals.foldersReused += summary.foldersReused;
+  }
+  return totals;
+}
