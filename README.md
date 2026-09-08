@@ -235,6 +235,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing requiremen
 - Bug reports: [GitHub Issues](https://github.com/<your-org>/mailguard/issues)
 - Security concerns: see [SECURITY.md](SECURITY.md) — please do not open a public issue.
 - Community standards: see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+- Privacy & terms of use: see [PRIVACY.md](PRIVACY.md) (also available in-app under **Confidentialité & conditions**).
 
 ---
 

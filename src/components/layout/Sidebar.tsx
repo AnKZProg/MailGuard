@@ -65,6 +65,12 @@ export function Sidebar({ criticalFindingsCount = 0, shadowModeEnabled = true }:
           <span>palette de commandes</span>
         </div>
         <p className="px-2.5 pt-1 text-[11px] text-text-tertiary">Usage local — rien ne quitte cette machine.</p>
+        <Link
+          href="/privacy"
+          className="px-2.5 pb-1 text-[11px] text-text-tertiary underline decoration-border-default underline-offset-2 hover:text-text-secondary"
+        >
+          Confidentialité &amp; conditions
+        </Link>
       </div>
     </aside>
   );

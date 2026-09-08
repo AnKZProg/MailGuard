@@ -47,11 +47,21 @@ export default async function DashboardPage({
             </div>
           ) : messages.length === 0 ? (
             <div className="flex h-full items-center justify-center p-6">
-              <EmptyState
-                icon={Inbox}
-                title="Rien à afficher"
-                description="Aucun message ici pour l'instant. Clique sur Synchroniser pour aller chercher les nouveaux mails."
-              />
+              {verdict === "SPAM" || verdict === "PHISHING" ? (
+                <EmptyState
+                  icon={Inbox}
+                  title={verdict === "SPAM" ? "Aucun spam en boîte de réception" : "Aucun phishing en boîte de réception"}
+                  description="Normal : tout ce qui est classé Spam ou Phishing part directement en quarantaine dès la synchronisation, donc cet onglet reste vide en usage courant. Pour revoir les verdicts du moteur avant qu'ils ne partent automatiquement, active le Mode observation sur la page Comptes — les mails y resteront visibles ici le temps de vérifier."
+                  actionHref="/accounts"
+                  actionLabel="Voir le Mode observation"
+                />
+              ) : (
+                <EmptyState
+                  icon={Inbox}
+                  title="Rien à afficher"
+                  description="Aucun message ici pour l'instant. Clique sur Synchroniser pour aller chercher les nouveaux mails."
+                />
+              )}
             </div>
           ) : (
             <MessageList messages={messages} nextCursor={nextCursor} filters={{ verdict }} />
