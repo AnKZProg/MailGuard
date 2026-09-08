@@ -11,17 +11,21 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # .npmrc pins script-shell to a Windows Git Bash path for the local
-  # Windows launcher. Override it here so npm lifecycle scripts (e.g.
-  # postinstall -> prisma generate) run under the runner's own shell
-  # instead of failing to find that path on Linux.
-  npm_config_script_shell: /bin/bash
-
 jobs:
   ci:
-    name: Lint, typecheck, test, build
-    runs-on: ubuntu-latest
+    name: Lint, typecheck, test, build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      # .npmrc pins script-shell to the Windows Git Bash path used by the
+      # local launcher (Lancer-MailGuard.bat). That path is also correct on
+      # GitHub's windows-latest runners, so only override it on Linux,
+      # where npm lifecycle scripts (e.g. postinstall -> prisma generate)
+      # would otherwise fail to find that path.
+      npm_config_script_shell: ${{ runner.os == 'Windows' && 'C:\Program Files\Git\bin\bash.exe' || '/bin/bash' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
