@@ -20,6 +20,7 @@ export type OrganizeBySenderSummary = {
   failed: number;
   foldersCreated: number;
   foldersReused: number;
+  accountsFailed: number;
 };
 
 // Serializes organize/file runs per account — nothing else guards against two
@@ -47,7 +48,15 @@ async function scanGmailInboxByBrand(accountId: string): Promise<{ brand: string
   const byBrand = new Map<string, string[]>();
 
   for (const id of ids) {
-    const raw = await withBackoff(async () => getMessageMetadata(await getValidAccessToken(accountId), id));
+    let raw;
+    try {
+      raw = await withBackoff(async () => getMessageMetadata(await getValidAccessToken(accountId), id));
+    } catch (err) {
+      // A single inaccessible/deleted-mid-scan message (e.g. a 403/404) must
+      // not abort the whole account's scan — skip it and keep going.
+      console.error(`[organize-by-sender] lecture échouée pour le message ${id}`, err);
+      continue;
+    }
     const brand = brandForDomain(gmailFromDomain(raw.payload?.headers));
     if (!brand) continue;
     (byBrand.get(brand) ?? byBrand.set(brand, []).get(brand)!).push(id);
@@ -161,7 +170,7 @@ async function runOrganizeAccountBySender(accountId: string): Promise<OrganizeBy
     },
   });
 
-  return { scanned, groups: qualifying.length, moved, failed, foldersCreated, foldersReused };
+  return { scanned, groups: qualifying.length, moved, failed, foldersCreated, foldersReused, accountsFailed: 0 };
 }
 
 /**
@@ -171,18 +180,36 @@ async function runOrganizeAccountBySender(accountId: string): Promise<OrganizeBy
  * write-lock pressure for no real speedup). Used by the "create/update brand
  * folders" button so a newly connected account gets the same MailGuard >
  * Marques structure as the others without visiting each account row.
+ *
+ * Each account is isolated in its own try/catch: one account failing outright
+ * (token refresh error, an unexpected provider error, ...) must not stop the
+ * rest from being processed — a prior version let a single account's
+ * exception abort the loop, silently skipping every account after it.
  */
 export async function organizeAllAccountsBySender(): Promise<OrganizeBySenderSummary> {
-  const accounts = await db.account.findMany({ where: { status: "ACTIVE" }, select: { id: true } });
-  const totals: OrganizeBySenderSummary = { scanned: 0, groups: 0, moved: 0, failed: 0, foldersCreated: 0, foldersReused: 0 };
+  const accounts = await db.account.findMany({ where: { status: "ACTIVE" }, select: { id: true, emailAddress: true } });
+  const totals: OrganizeBySenderSummary = {
+    scanned: 0,
+    groups: 0,
+    moved: 0,
+    failed: 0,
+    foldersCreated: 0,
+    foldersReused: 0,
+    accountsFailed: 0,
+  };
   for (const account of accounts) {
-    const summary = await organizeAccountBySender(account.id);
-    totals.scanned += summary.scanned;
-    totals.groups += summary.groups;
-    totals.moved += summary.moved;
-    totals.failed += summary.failed;
-    totals.foldersCreated += summary.foldersCreated;
-    totals.foldersReused += summary.foldersReused;
+    try {
+      const summary = await organizeAccountBySender(account.id);
+      totals.scanned += summary.scanned;
+      totals.groups += summary.groups;
+      totals.moved += summary.moved;
+      totals.failed += summary.failed;
+      totals.foldersCreated += summary.foldersCreated;
+      totals.foldersReused += summary.foldersReused;
+    } catch (err) {
+      console.error(`[organize-by-sender] échec complet pour le compte ${account.emailAddress}`, err);
+      totals.accountsFailed++;
+    }
   }
   return totals;
 }

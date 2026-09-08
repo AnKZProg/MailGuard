@@ -9,7 +9,7 @@ import { withAccountOrganizeLock } from "@/lib/organize/organize-by-sender";
 import { listMessageIdsByLabel, getMessageMetadata, modifyLabels } from "@/lib/providers/google/gmail-client";
 import { listAllMessagesWithSender, moveMessage } from "@/lib/providers/microsoft/graph-client";
 
-export type FileIntoExistingSummary = { scanned: number; moved: number; failed: number };
+export type FileIntoExistingSummary = { scanned: number; moved: number; failed: number; accountsFailed: number };
 
 /**
  * Lightweight, ongoing counterpart to organizeAccountBySender: files whatever
@@ -36,7 +36,7 @@ async function runFileAccountIntoExistingFolders(accountId: string): Promise<Fil
   }
 
   if (brandMap.size === 0) {
-    return { scanned: 0, moved: 0, failed: 0 };
+    return { scanned: 0, moved: 0, failed: 0, accountsFailed: 0 };
   }
 
   let scanned = 0;
@@ -100,17 +100,29 @@ async function runFileAccountIntoExistingFolders(accountId: string): Promise<Fil
     });
   }
 
-  return { scanned, moved, failed };
+  return { scanned, moved, failed, accountsFailed: 0 };
 }
 
+/**
+ * Each account is isolated in its own try/catch: one account failing outright
+ * (token refresh error, an unexpected provider error while listing the
+ * inbox, ...) must not stop the rest from being processed — a prior version
+ * let a single account's exception abort the loop, silently skipping every
+ * account after it.
+ */
 export async function fileAllAccountsIntoExistingFolders(): Promise<FileIntoExistingSummary> {
-  const accounts = await db.account.findMany({ where: { status: "ACTIVE" }, select: { id: true } });
-  const totals: FileIntoExistingSummary = { scanned: 0, moved: 0, failed: 0 };
+  const accounts = await db.account.findMany({ where: { status: "ACTIVE" }, select: { id: true, emailAddress: true } });
+  const totals: FileIntoExistingSummary = { scanned: 0, moved: 0, failed: 0, accountsFailed: 0 };
   for (const account of accounts) {
-    const summary = await fileAccountIntoExistingFolders(account.id);
-    totals.scanned += summary.scanned;
-    totals.moved += summary.moved;
-    totals.failed += summary.failed;
+    try {
+      const summary = await fileAccountIntoExistingFolders(account.id);
+      totals.scanned += summary.scanned;
+      totals.moved += summary.moved;
+      totals.failed += summary.failed;
+    } catch (err) {
+      console.error(`[file-into-existing] échec complet pour le compte ${account.emailAddress}`, err);
+      totals.accountsFailed++;
+    }
   }
   return totals;
 }

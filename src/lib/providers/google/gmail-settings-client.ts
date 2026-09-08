@@ -7,7 +7,17 @@ async function settingsFetch<T>(accessToken: string, path: string): Promise<T | 
   // request) — degrade gracefully rather than failing the whole audit.
   if (response.status === 403 || response.status === 404) return null;
   if (!response.ok) throw new Error(`Requête settings Gmail échouée: ${path} (${response.status})`);
-  return (await response.json()) as T;
+  // A 2xx response with an empty or non-JSON body has been observed for some
+  // accounts on this endpoint — treat it the same as "no finding" instead of
+  // throwing SyntaxError and failing the whole audit on every sync.
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text) as T;
+  } catch (err) {
+    console.error(`[gmail-settings] réponse non-JSON pour ${path}`, err);
+    return null;
+  }
 }
 
 export type AutoForwarding = { enabled: boolean; emailAddress?: string; disposition?: string };

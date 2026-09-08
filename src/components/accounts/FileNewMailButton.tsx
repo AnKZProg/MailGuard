@@ -16,11 +16,16 @@ export function FileNewMailButton() {
     setBusy(true);
     try {
       const summary = await fileNewMailAll();
+      const accountsFailedSuffix = summary.accountsFailed
+        ? ` — ${summary.accountsFailed} compte(s) n'ont pas pu être traités du tout, voir les logs serveur`
+        : "";
       if (summary.moved === 0) {
-        toast.info("Rien de nouveau à ranger — aucun mail de la boîte de réception ne correspond à un dossier existant.");
+        toast[summary.accountsFailed ? "warning" : "info"](
+          `Rien de nouveau à ranger — aucun mail de la boîte de réception ne correspond à un dossier existant.${accountsFailedSuffix}`,
+        );
       } else {
-        toast.success(
-          `${summary.moved} mail(s) rangé(s) dans un dossier existant sur ${summary.scanned} scanné(s)${summary.failed ? `, ${summary.failed} échec(s)` : ""}`,
+        toast[summary.accountsFailed ? "warning" : "success"](
+          `${summary.moved} mail(s) rangé(s) dans un dossier existant sur ${summary.scanned} scanné(s)${summary.failed ? `, ${summary.failed} échec(s)` : ""}${accountsFailedSuffix}`,
         );
       }
     } catch {

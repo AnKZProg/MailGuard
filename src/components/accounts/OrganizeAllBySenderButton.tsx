@@ -23,11 +23,16 @@ export function OrganizeAllBySenderButton() {
     setBusy(true);
     try {
       const summary = await organizeBySenderAll();
+      const accountsFailedSuffix = summary.accountsFailed
+        ? ` — ${summary.accountsFailed} compte(s) n'ont pas pu être traités du tout, voir les logs serveur`
+        : "";
       if (summary.groups === 0) {
-        toast.info("Aucun expéditeur récurrent (3+ mails) trouvé sur les comptes connectés.");
+        toast[summary.accountsFailed ? "warning" : "info"](
+          `Aucun expéditeur récurrent (3+ mails) trouvé sur les comptes traités.${accountsFailedSuffix}`,
+        );
       } else {
-        toast.success(
-          `${summary.groups} dossier(s) (${summary.foldersReused} réutilisé(s), ${summary.foldersCreated} créé(s)), ${summary.moved} mail(s) rangé(s) sur ${summary.scanned} scanné(s)${summary.failed ? `, ${summary.failed} échec(s)` : ""}`,
+        toast[summary.accountsFailed ? "warning" : "success"](
+          `${summary.groups} dossier(s) (${summary.foldersReused} réutilisé(s), ${summary.foldersCreated} créé(s)), ${summary.moved} mail(s) rangé(s) sur ${summary.scanned} scanné(s)${summary.failed ? `, ${summary.failed} échec(s)` : ""}${accountsFailedSuffix}`,
         );
       }
     } catch {
