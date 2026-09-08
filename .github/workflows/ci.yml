@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+# Cancel superseded runs on the same branch/PR to save CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # .npmrc pins script-shell to a Windows Git Bash path for the local
+  # Windows launcher. Override it here so npm lifecycle scripts (e.g.
+  # postinstall -> prisma generate) run under the runner's own shell
+  # instead of failing to find that path on Linux.
+  npm_config_script_shell: /bin/bash
+
+jobs:
+  ci:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Set up local SQLite schema
+        # The root layout queries the DB (security findings count) even for
+        # static pages like /_not-found, so `next build` needs a real schema
+        # on disk — not just a directory. `prisma db push` creates both.
+        run: npm run db:push
+
+      - name: Build
+        run: npm run build
+        env:
+          # Placeholder values so the Zod env schema validates during a
+          # build-only CI run. These are not real secrets and are never
+          # used to reach a live provider.
+          MAILGUARD_ENCRYPTION_KEY: "XA+SCHAH++Ny85SXoAxff7mbre7/brpPLttxlnQrF/A="
+          GOOGLE_CLIENT_ID: "ci-placeholder-google-client-id"
+          GOOGLE_CLIENT_SECRET: "ci-placeholder-google-client-secret"
+          MICROSOFT_CLIENT_ID: "ci-placeholder-microsoft-client-id"
+          MICROSOFT_CLIENT_SECRET: "ci-placeholder-microsoft-client-secret"
+
+      - name: Typecheck
+        # Runs after `build` because Next.js 16 generates the `.next/types/`
+        # global types (RouteContext, LayoutProps, etc.) that tsconfig.json
+        # includes — a standalone tsc run before any build fails on them.
+        run: npm run typecheck

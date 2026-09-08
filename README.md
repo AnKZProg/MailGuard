@@ -1,5 +1,8 @@
 # MailGuard
 
+[![CI](https://github.com/AnKZProg/MailGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/AnKZProg/MailGuard/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A local, privacy-first mail-triage dashboard for Gmail and Outlook/Microsoft 365. Classify spam and phishing, quarantine suspicious mail, audit security settings, and organize your inbox — all without sending email content to any third party.
 
 **Single-user • Local-only • Self-hosted • No tracking**
@@ -93,8 +96,9 @@ npm run db:studio   # Open Prisma Studio GUI
 npm test            # Run all tests (Vitest)
 npm run test:watch  # Watch mode
 
-# Linting
+# Linting & types
 npm run lint        # Check code with ESLint
+npm run typecheck   # Check types with tsc --noEmit
 ```
 
 ## Environment Setup
@@ -229,7 +233,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing requiremen
 ## Support
 
 - Bug reports: [GitHub Issues](https://github.com/<your-org>/mailguard/issues)
-- Security concerns: Please do not open a public issue; contact the maintainer directly.
+- Security concerns: see [SECURITY.md](SECURITY.md) — please do not open a public issue.
+- Community standards: see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ---
 

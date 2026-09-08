@@ -10,6 +10,14 @@ cd /d "%~dp0"
 
 netstat -ano | findstr ":3000" | findstr "LISTENING" >nul 2>&1
 if errorlevel 1 (
+    echo Preparation de la base de donnees locale...
+    call npm run db:push
+    if errorlevel 1 (
+        echo.
+        echo L'initialisation de la base de donnees a echoue.
+        pause
+        exit /b 1
+    )
     echo Compilation de MailGuard, patiente une a deux minutes ^(une seule fois par demarrage^)...
     call npm run build
     if errorlevel 1 (
