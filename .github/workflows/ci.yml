@@ -18,14 +18,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # windows-latest is pinned to windows-2022 rather than left
+        # floating: a newer Windows/Visual Studio image broke node-gyp's
+        # VS-detection when compiling better-sqlite3 from source (no
+        # prebuilt binary was available for the runner's Node patch
+        # version), with "unknown version... could not find any Visual
+        # Studio installation to use" even though VS was present.
+        os: [ubuntu-latest, windows-2022]
     env:
       # .npmrc pins script-shell to the Windows Git Bash path used by the
       # local launcher (Lancer-MailGuard.bat). That path is also correct on
-      # GitHub's windows-latest runners, so only override it on Linux,
-      # where npm lifecycle scripts (e.g. postinstall -> prisma generate)
-      # would otherwise fail to find that path.
-      npm_config_script_shell: ${{ matrix.os == 'windows-latest' && 'C:\Program Files\Git\bin\bash.exe' || '/bin/bash' }}
+      # GitHub's windows runners, so only override it on Linux, where npm
+      # lifecycle scripts (e.g. postinstall -> prisma generate) would
+      # otherwise fail to find that path.
+      npm_config_script_shell: ${{ matrix.os == 'windows-2022' && 'C:\Program Files\Git\bin\bash.exe' || '/bin/bash' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
