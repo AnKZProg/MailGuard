@@ -4,7 +4,14 @@ import { withBackoff } from "@/lib/sync/backoff";
 import { brandForDomain } from "@/lib/organize/brand";
 import { domainOf } from "@/lib/mail/headers";
 import { gmailFromDomain } from "@/lib/organize/sender-domain";
-import { GMAIL_BRANDS_PREFIX, buildGmailBrandMap, findGraphBrandsParent, ensureGraphBrandsParent, buildGraphBrandMap } from "@/lib/organize/brand-folders";
+import {
+  GMAIL_BRANDS_PREFIX,
+  buildGmailBrandMap,
+  ensureGmailBrandsParent,
+  findGraphBrandsParent,
+  ensureGraphBrandsParent,
+  buildGraphBrandMap,
+} from "@/lib/organize/brand-folders";
 import { ensureLabel, listMessageIdsByLabel, getMessageMetadata, modifyLabels } from "@/lib/providers/google/gmail-client";
 import { ensureChildFolder, listAllMessagesWithSender, moveMessage } from "@/lib/providers/microsoft/graph-client";
 
@@ -44,7 +51,7 @@ export function withAccountOrganizeLock<T>(accountId: string, fn: () => Promise<
 // close to expiry), so calling it fresh before every provider request is the
 // simplest way to never hand a stale token to a call deep into the run.
 async function scanGmailInboxByBrand(accountId: string): Promise<{ brand: string; ids: string[] }[]> {
-  const ids = await listMessageIdsByLabel(await getValidAccessToken(accountId), "INBOX");
+  const ids = await withBackoff(async () => listMessageIdsByLabel(await getValidAccessToken(accountId), "INBOX"));
   const byBrand = new Map<string, string[]>();
 
   for (const id of ids) {
@@ -117,6 +124,7 @@ async function runOrganizeAccountBySender(accountId: string): Promise<OrganizeBy
   let foldersCreated = 0;
   let foldersReused = 0;
   let graphBrandsParentId: string | null = null;
+  let gmailBrandsParentEnsured = false;
 
   for (const group of qualifying) {
     let destinationId = existingByLowerName.get(group.brand.toLowerCase());
@@ -126,6 +134,10 @@ async function runOrganizeAccountBySender(accountId: string): Promise<OrganizeBy
       try {
         const accessToken = await getValidAccessToken(accountId);
         if (account.provider === "GOOGLE") {
+          if (!gmailBrandsParentEnsured) {
+            await ensureGmailBrandsParent(accessToken);
+            gmailBrandsParentEnsured = true;
+          }
           destinationId = await ensureLabel(accessToken, `${GMAIL_BRANDS_PREFIX}${group.brand}`);
         } else {
           if (!graphBrandsParentId) graphBrandsParentId = await ensureGraphBrandsParent(accessToken);

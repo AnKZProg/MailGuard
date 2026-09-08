@@ -1,4 +1,4 @@
-import { listCustomLabels } from "@/lib/providers/google/gmail-client";
+import { listCustomLabels, ensureLabel } from "@/lib/providers/google/gmail-client";
 import {
   ensureFolder,
   ensureChildFolder,
@@ -6,6 +6,7 @@ import {
   listTopLevelFolders,
   listChildFolders,
 } from "@/lib/providers/microsoft/graph-client";
+import { withBackoff } from "@/lib/sync/backoff";
 
 // One parent folder per account instead of dozens of top-level entries — the
 // whole point being the user can collapse a single "MailGuard" (and its
@@ -27,7 +28,7 @@ function leafName(fullName: string): string {
  * nested layout) or already under MailGuard/Marques/ — keyed by its leaf name
  * so either shape matches a computed brand the same way. */
 export async function buildGmailBrandMap(accessToken: string): Promise<BrandFolderMap> {
-  const labels = await listCustomLabels(accessToken);
+  const labels = await withBackoff(() => listCustomLabels(accessToken));
   return new Map(labels.map((l) => [leafName(l.name).toLowerCase(), l.id]));
 }
 
@@ -47,6 +48,22 @@ export async function findGraphBrandsParent(accessToken: string): Promise<string
 export async function ensureGraphBrandsParent(accessToken: string): Promise<string> {
   const rootId = await ensureFolder(accessToken, GRAPH_ROOT_FOLDER_NAME);
   return ensureChildFolder(accessToken, rootId, BRANDS_FOLDER_NAME);
+}
+
+/** Creates the "MailGuard" and "MailGuard/Marques" labels themselves (not
+ * just their eventual children) so they exist as real label objects, not
+ * only as a naming convention. Unlike Graph folders — which are genuinely
+ * hierarchical, so ensureGraphBrandsParent must create the real parent
+ * before a child can nest under it — Gmail's API happily creates
+ * "MailGuard/Marques/Ubisoft" directly without ever creating "MailGuard" or
+ * "MailGuard/Marques" themselves. Gmail's own inbox sidebar still renders
+ * the "/" as nesting either way, but every other Gmail surface (Settings >
+ * Labels, IMAP clients, the mobile app's label manager) shows the literal
+ * label name — having the parents exist as real labels is the closest
+ * approximation of Graph's true hierarchy Gmail's model allows. */
+export async function ensureGmailBrandsParent(accessToken: string): Promise<void> {
+  await ensureLabel(accessToken, GRAPH_ROOT_FOLDER_NAME);
+  await ensureLabel(accessToken, `${GRAPH_ROOT_FOLDER_NAME}/${BRANDS_FOLDER_NAME}`);
 }
 
 /** Every existing brand folder reachable for reuse: still-top-level ones

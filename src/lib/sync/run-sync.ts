@@ -10,6 +10,23 @@ import { classifyAndPersist } from "@/lib/classify/classify-and-persist";
 import { runSecurityAudit } from "@/lib/security/run-audit";
 import { emptyTrash } from "@/lib/maintenance/empty-trash";
 import { reclassifyProviderFlaggedMessages } from "@/lib/maintenance/reclassify-junk";
+import { mapWithConcurrency } from "@/lib/concurrency";
+
+// Every account's sync also does many small SQLite writes against the same
+// on-disk file — syncing all accounts fully concurrently made unrelated page
+// loads stall for seconds behind write-lock contention. This keeps most of
+// the network-bound speedup of running several accounts at once while
+// capping how many can be writing to the DB at the same instant.
+const SYNC_CONCURRENCY = 3;
+
+/** Syncs every ACTIVE account, isolated per account (mapWithConcurrency never
+ * lets one account's rejection stop the others). Shared by the manual/auto
+ * "Synchroniser" API route and the server-side background scheduler so both
+ * use the exact same concurrency and account-selection logic. */
+export async function syncAllActiveAccounts(): Promise<PromiseSettledResult<void>[]> {
+  const accountIds = (await db.account.findMany({ where: { status: "ACTIVE" }, select: { id: true } })).map((a) => a.id);
+  return mapWithConcurrency(accountIds, SYNC_CONCURRENCY, (id) => enqueueSync(id));
+}
 
 const DEFAULT_WINDOW_DAYS = 30;
 // Junk/Spam folders are rescanned on a fixed window every sync (not gated by
@@ -55,45 +72,54 @@ async function runSyncForAccount(accountId: string): Promise<void> {
         : await fetchNewGraphMessages(accessToken, since);
 
     for (const message of normalized) {
-      const stored = await db.message.upsert({
-        where: { accountId_providerMessageId: { accountId, providerMessageId: message.providerMessageId } },
-        create: {
-          accountId,
-          providerMessageId: message.providerMessageId,
-          threadId: message.threadId,
-          internetMessageId: message.internetMessageId,
-          fromAddress: message.fromAddress,
-          fromDomain: message.fromDomain,
-          fromDisplayName: message.fromDisplayName,
-          replyToDomain: message.replyToDomain,
-          toCount: message.toCount,
-          subject: message.subject,
-          snippet: message.snippet,
-          receivedAt: message.receivedAt,
-          isRead: message.isRead,
-          hasAttachments: message.hasAttachments,
-          attachmentTypes: message.attachmentTypes.join(","),
-          listUnsubscribe: message.listUnsubscribe,
-          listUnsubscribePost: message.listUnsubscribePost,
-          listId: message.listId,
-          precedence: message.precedence,
-          authSpf: message.authSpf,
-          authDkim: message.authDkim,
-          authDmarc: message.authDmarc,
-          providerSpamFlag: message.providerSpamFlag,
-          providerFolder: message.providerFolder,
-          providerLabels: message.providerLabels.join(","),
-        },
-        update: {
-          isRead: message.isRead,
-          providerFolder: message.providerFolder,
-          providerLabels: message.providerLabels.join(","),
-        },
-      });
-      messagesSeen++;
+      try {
+        const stored = await db.message.upsert({
+          where: { accountId_providerMessageId: { accountId, providerMessageId: message.providerMessageId } },
+          create: {
+            accountId,
+            providerMessageId: message.providerMessageId,
+            threadId: message.threadId,
+            internetMessageId: message.internetMessageId,
+            fromAddress: message.fromAddress,
+            fromDomain: message.fromDomain,
+            fromDisplayName: message.fromDisplayName,
+            replyToDomain: message.replyToDomain,
+            toCount: message.toCount,
+            subject: message.subject,
+            snippet: message.snippet,
+            receivedAt: message.receivedAt,
+            isRead: message.isRead,
+            hasAttachments: message.hasAttachments,
+            attachmentTypes: message.attachmentTypes.join(","),
+            listUnsubscribe: message.listUnsubscribe,
+            listUnsubscribePost: message.listUnsubscribePost,
+            listId: message.listId,
+            precedence: message.precedence,
+            authSpf: message.authSpf,
+            authDkim: message.authDkim,
+            authDmarc: message.authDmarc,
+            providerSpamFlag: message.providerSpamFlag,
+            providerFolder: message.providerFolder,
+            providerLabels: message.providerLabels.join(","),
+          },
+          update: {
+            isRead: message.isRead,
+            providerFolder: message.providerFolder,
+            providerLabels: message.providerLabels.join(","),
+          },
+        });
+        messagesSeen++;
 
-      if (!stored.classifiedAt) {
-        await classifyAndPersist(stored.id);
+        if (!stored.classifiedAt) {
+          await classifyAndPersist(stored.id);
+        }
+      } catch (err) {
+        // One malformed/unusual message must not block classification for
+        // every message still queued after it in this account's batch — that
+        // silently stalls the whole account (nothing past the bad message
+        // ever gets classified, quarantined, or archived) until someone
+        // notices and digs through logs.
+        console.error(`[sync] échec pour le message ${message.providerMessageId}`, err);
       }
     }
 

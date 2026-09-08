@@ -44,7 +44,7 @@ async function runFileAccountIntoExistingFolders(accountId: string): Promise<Fil
   let failed = 0;
 
   if (account.provider === "GOOGLE") {
-    const ids = await listMessageIdsByLabel(await getValidAccessToken(accountId), "INBOX");
+    const ids = await withBackoff(async () => listMessageIdsByLabel(await getValidAccessToken(accountId), "INBOX"));
     for (const id of ids) {
       scanned++;
       try {

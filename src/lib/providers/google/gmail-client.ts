@@ -20,9 +20,23 @@ export class GmailApiError extends Error {
     message: string,
     public readonly status: number,
     public readonly retryAfterSeconds?: number,
+    // Gmail's quota/rate-limit errors ("rateLimitExceeded",
+    // "userRateLimitExceeded", "quotaExceeded") come back as HTTP 403, same
+    // as a genuine permission error — only this reason string tells them
+    // apart, and withBackoff needs it to know which 403s are worth retrying.
+    public readonly reason?: string,
   ) {
     super(message);
     this.name = "GmailApiError";
+  }
+}
+
+async function parseErrorReason(response: Response): Promise<string | undefined> {
+  try {
+    const body = (await response.clone().json()) as { error?: { errors?: { reason?: string }[]; status?: string } };
+    return body.error?.errors?.[0]?.reason ?? body.error?.status;
+  } catch {
+    return undefined;
   }
 }
 
@@ -40,10 +54,12 @@ async function gmailFetch(accessToken: string, path: string, params?: Record<str
   const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!response.ok) {
     const retryAfter = response.headers.get("Retry-After");
+    const reason = await parseErrorReason(response);
     throw new GmailApiError(
       `Requête Gmail échouée: ${path} (${response.status})`,
       response.status,
       retryAfter ? Number(retryAfter) : undefined,
+      reason,
     );
   }
   return response;
