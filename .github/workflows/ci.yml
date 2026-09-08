@@ -25,7 +25,7 @@ jobs:
       # GitHub's windows-latest runners, so only override it on Linux,
       # where npm lifecycle scripts (e.g. postinstall -> prisma generate)
       # would otherwise fail to find that path.
-      npm_config_script_shell: ${{ runner.os == 'Windows' && 'C:\Program Files\Git\bin\bash.exe' || '/bin/bash' }}
+      npm_config_script_shell: ${{ matrix.os == 'windows-latest' && 'C:\Program Files\Git\bin\bash.exe' || '/bin/bash' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
