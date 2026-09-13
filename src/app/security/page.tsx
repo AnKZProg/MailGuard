@@ -16,16 +16,18 @@ const GOOGLE_CHECKS = ["Transfert automatique (compte)", "Règles avec transfert
 const MICROSOFT_CHECKS = ["Règles de boîte de réception avec transfert"];
 
 export default async function SecurityPage() {
-  const accounts = await db.account.findMany({
-    where: { status: "ACTIVE" },
-    select: { id: true, emailAddress: true, provider: true, lastSyncAt: true },
-    orderBy: { createdAt: "asc" },
-  });
-  const findings = await db.securityFinding.findMany({
-    where: { resolvedAt: null },
-    include: { account: { select: { emailAddress: true } } },
-    orderBy: [{ severity: "asc" }, { firstSeenAt: "desc" }],
-  });
+  const [accounts, findings] = await Promise.all([
+    db.account.findMany({
+      where: { status: "ACTIVE" },
+      select: { id: true, emailAddress: true, provider: true, lastSyncAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    db.securityFinding.findMany({
+      where: { resolvedAt: null },
+      include: { account: { select: { emailAddress: true } } },
+      orderBy: [{ severity: "asc" }, { firstSeenAt: "desc" }],
+    }),
+  ]);
 
   const unacknowledgedCritical = findings.filter((f) => f.severity === "CRITICAL" && !f.acknowledgedAt);
 

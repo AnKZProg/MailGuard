@@ -66,6 +66,15 @@ function registrableDomain(domain: string): string {
   return lastTwo;
 }
 
+// `domainOf()` takes everything after the last "@" in a fully
+// attacker-controlled `From:` header with no syntax validation. Every actual
+// write sink downstream (Gmail label JSON body, Graph folder OData `$filter`
+// — the latter already escapes embedded quotes) is safe against injection,
+// but nothing stops a malformed value from becoming a garbage folder name.
+// Reject anything that isn't a plausible DNS hostname before it goes any
+// further, as defense in depth independent of those sinks' own escaping.
+const VALID_HOSTNAME = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+
 function titleCase(label: string): string {
   return label
     .split(/[-_]+/)
@@ -75,12 +84,23 @@ function titleCase(label: string): string {
 }
 
 /** Returns a human-readable brand name for this sender domain, or null when the
- * domain is a generic personal-email provider that shouldn't be grouped at all. */
+ * domain is a generic personal-email provider that shouldn't be grouped at all.
+ *
+ * Known tradeoff: brand names come from only the second-level label (e.g.
+ * "amazon.<any-tld>" -> "Amazon"), not the full registrable domain beyond
+ * BRAND_DOMAIN_ALIASES. A sender who registers a domain sharing an SLD with a
+ * brand the user already has a folder for (e.g. "amazon.<unusual-tld>") gets
+ * filed into that same folder rather than flagged — this affects only
+ * *organize by sender*, not spam/phishing classification, which is a
+ * separate signal-based pipeline unaffected by this. Fixing it properly would
+ * need full registrable-domain matching via a public-suffix-list dependency;
+ * not worth the added complexity for what's a filing/cosmetic risk, not a
+ * classification one. */
 export function brandForDomain(rawDomain: string): string | null {
   // A trailing dot (rare but RFC-valid, e.g. "example.com.") would otherwise
   // make registrableDomain treat the empty label after it as the TLD.
   const domain = rawDomain.trim().toLowerCase().replace(/\.$/, "");
-  if (!domain || PUBLIC_EMAIL_DOMAINS.has(domain)) return null;
+  if (!domain || !VALID_HOSTNAME.test(domain) || PUBLIC_EMAIL_DOMAINS.has(domain)) return null;
 
   if (BRAND_DOMAIN_ALIASES[domain]) return BRAND_DOMAIN_ALIASES[domain];
 

@@ -3,7 +3,6 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { CommandPalette } from "@/components/layout/CommandPalette";
-import { AutoSync } from "@/components/mail/AutoSync";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,7 +28,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <AppShell>{children}</AppShell>
         <CommandPalette />
-        <AutoSync />
         <Toaster
           position="bottom-right"
           toastOptions={{

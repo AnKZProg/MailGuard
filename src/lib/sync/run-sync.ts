@@ -6,7 +6,7 @@ import { mapGmailMessage } from "@/lib/providers/google/mapper";
 import { listMessages, getWellKnownFolderId } from "@/lib/providers/microsoft/graph-client";
 import { mapGraphMessage } from "@/lib/providers/microsoft/mapper";
 import type { NormalizedMessage } from "@/lib/mail/types";
-import { classifyAndPersist } from "@/lib/classify/classify-and-persist";
+import { classifyAndPersist, loadClassifyContext } from "@/lib/classify/classify-and-persist";
 import { runSecurityAudit } from "@/lib/security/run-audit";
 import { emptyTrash } from "@/lib/maintenance/empty-trash";
 import { reclassifyProviderFlaggedMessages } from "@/lib/maintenance/reclassify-junk";
@@ -71,6 +71,10 @@ async function runSyncForAccount(accountId: string): Promise<void> {
         ? await fetchNewGmailMessages(accountId, accessToken, since)
         : await fetchNewGraphMessages(accessToken, since);
 
+    // Sender policies and shadow-mode can't change mid-run — load once here
+    // instead of classifyAndPersist re-querying both on every message below.
+    const classifyContext = normalized.length > 0 ? await loadClassifyContext() : null;
+
     for (const message of normalized) {
       try {
         const stored = await db.message.upsert({
@@ -111,7 +115,7 @@ async function runSyncForAccount(accountId: string): Promise<void> {
         messagesSeen++;
 
         if (!stored.classifiedAt) {
-          await classifyAndPersist(stored.id);
+          await classifyAndPersist(stored.id, classifyContext ?? undefined);
         }
       } catch (err) {
         // One malformed/unusual message must not block classification for
@@ -179,11 +183,29 @@ async function fetchNewGmailMessages(accountId: string, accessToken: string, sin
   const existingIds = new Set(existing.map((m) => m.providerMessageId));
   const newIds = candidateIds.filter((id) => !existingIds.has(id));
 
+  // Bounded parallelism: these are read-only Gmail API calls (no DB writes
+  // until the upsert loop in runSyncForAccount), so — unlike SYNC_CONCURRENCY,
+  // which caps concurrent *accounts* to avoid SQLite write-lock contention —
+  // this only has to stay polite to Gmail's own rate limits. Kept at the same
+  // cap as SYNC_CONCURRENCY anyway: a real live sync already hit
+  // `rateLimitExceeded` on this exact endpoint during a heavy multi-account
+  // run, so more headroom here isn't worth the risk of tripping it again.
+  const results = await mapWithConcurrency(newIds, SYNC_CONCURRENCY, (id) =>
+    withBackoff(() => getMessageMetadata(accessToken, id)),
+  );
+
   const messages: NormalizedMessage[] = [];
-  for (const id of newIds) {
-    const raw = await withBackoff(() => getMessageMetadata(accessToken, id));
-    messages.push(mapGmailMessage(raw));
-  }
+  results.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      messages.push(mapGmailMessage(result.value));
+    } else {
+      // One message that fails to fetch (403/404/etc.) must not lose every
+      // other message already fetched in this batch — those still get
+      // upserted+classified; this one is picked up again next sync since it
+      // was never persisted.
+      console.error(`[sync] lecture échouée pour le message ${newIds[index]}`, result.reason);
+    }
+  });
   return messages;
 }
 

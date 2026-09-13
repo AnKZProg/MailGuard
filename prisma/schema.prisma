@@ -135,6 +135,13 @@ model Message {
   @@unique([accountId, providerMessageId])
   @@index([accountId, receivedAt])
   @@index([accountId, state])
+  // The unified inbox (accountId unbound — "all accounts") filters by state
+  // (+ optionally verdict) and sorts by receivedAt; countByVerdict groups by
+  // verdict within a state. Both indexes above require accountId as the
+  // leading column, which this view never binds, so it fell back to a full
+  // table scan + sort on every load and every "load more".
+  @@index([state, receivedAt])
+  @@index([state, verdict])
 }
 
 model MessageSignal {

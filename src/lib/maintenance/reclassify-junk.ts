@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { classifyAndPersist } from "@/lib/classify/classify-and-persist";
+import { classifyAndPersist, loadClassifyContext } from "@/lib/classify/classify-and-persist";
 
 export type ReclassifySummary = { reclassified: number; nowFlagged: number };
 
@@ -25,10 +25,19 @@ export async function reclassifyProviderFlaggedMessages(accountId?: string): Pro
     select: { id: true, verdict: true },
   });
 
+  const classifyContext = targets.length > 0 ? await loadClassifyContext() : null;
+
   let nowFlagged = 0;
   for (const target of targets) {
-    const { verdict } = await classifyAndPersist(target.id);
-    if (verdict === "SPAM" || verdict === "PHISHING") nowFlagged++;
+    try {
+      const { verdict } = await classifyAndPersist(target.id, classifyContext ?? undefined);
+      if (verdict === "SPAM" || verdict === "PHISHING") nowFlagged++;
+    } catch (err) {
+      // Same isolation gap already fixed in the other bulk-per-message loops
+      // (organize-by-sender.ts, run-sync.ts): one message failing here must
+      // not abort reclassification for every message still queued after it.
+      console.error(`[reclassify-junk] échec pour le message ${target.id}`, err);
+    }
   }
 
   return { reclassified: targets.length, nowFlagged };

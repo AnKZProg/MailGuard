@@ -184,6 +184,10 @@ Before submitting a PR that touches sensitive areas:
 - [ ] No debug logs that expose sensitive data
 - [ ] HTTPS assumed for OAuth redirects (enforced via `APP_URL`)
 
+### Known `npm audit` findings
+
+A fresh `npm install` currently reports 4 HIGH-severity transitive advisories (`deepmerge-ts`, `mysql2`) pulled in via `@prisma/config` → `prisma`. These come from the Prisma **CLI** (used for `db:push`/`db:studio`), not `@prisma/client`, which is the only Prisma package the running app actually imports at runtime — and MailGuard only ever uses the SQLite driver adapter, never MySQL. Not reachable in the shipped app; don't spend time chasing these until Prisma ships a patched release upstream.
+
 ## Reporting Issues
 
 ### Bug Reports
