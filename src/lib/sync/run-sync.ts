@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { getValidAccessToken } from "@/lib/providers/token-manager";
 import { withBackoff } from "@/lib/sync/backoff";
-import { listMessageIds, getMessageMetadata } from "@/lib/providers/google/gmail-client";
+import { listMessageIds, getMessageMetadata, GmailApiError } from "@/lib/providers/google/gmail-client";
 import { mapGmailMessage } from "@/lib/providers/google/mapper";
 import { listMessages, getWellKnownFolderId } from "@/lib/providers/microsoft/graph-client";
 import { mapGraphMessage } from "@/lib/providers/microsoft/mapper";
@@ -18,6 +18,17 @@ import { mapWithConcurrency } from "@/lib/concurrency";
 // the network-bound speedup of running several accounts at once while
 // capping how many can be writing to the DB at the same instant.
 const SYNC_CONCURRENCY = 3;
+
+// Reconnecting via Google's consent screen can succeed (fresh, valid refresh
+// token) while still granting a narrower scope than requested — e.g. only
+// userinfo.email/openid if the Gmail permission checkbox wasn't selected.
+// The token itself works fine for auth, so this never trips the
+// invalid_grant/NEEDS_RECONSENT path in token-manager.ts; it only surfaces
+// here, on the first real Gmail API call, as a 403 the account then looks
+// healthy while silently failing every sync forever after.
+function isInsufficientScopeError(err: unknown): boolean {
+  return err instanceof GmailApiError && err.reason === "insufficientPermissions";
+}
 
 /** Syncs every ACTIVE account, isolated per account (mapWithConcurrency never
  * lets one account's rejection stop the others). Shared by the manual/auto
@@ -147,6 +158,13 @@ async function runSyncForAccount(accountId: string): Promise<void> {
       where: { id: syncRun.id },
       data: { finishedAt: new Date(), messagesSeen, error: err instanceof Error ? err.message : String(err) },
     });
+    if (isInsufficientScopeError(err)) {
+      // Same fix as invalid_grant: surface it as NEEDS_RECONSENT so the
+      // "Reconnecter" button on this row becomes visible — a scope shortfall
+      // is fixed the exact same way (re-run OAuth consent), it just isn't
+      // detected in the same place as an outright dead refresh token.
+      await db.account.update({ where: { id: accountId }, data: { status: "NEEDS_RECONSENT" } });
+    }
     throw err;
   }
 }
