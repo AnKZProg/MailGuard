@@ -49,5 +49,14 @@ for (const [i, f] of fixtures.entries()) {
   });
 }
 
+const blockedFixtures = [
+  { scope: "ADDRESS", pattern: "promo@dealsdealsdeals.biz" },
+  { scope: "DOMAIN", pattern: "spam-mailer.example" },
+];
+
+for (const b of blockedFixtures) {
+  await db.senderPolicy.create({ data: { scope: b.scope, pattern: b.pattern, verdict: "BLOCK", accountId: account.id } });
+}
+
 console.log("Seeded", account.id);
 await db.$disconnect();

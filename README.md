@@ -22,6 +22,10 @@ A local, privacy-first mail-triage dashboard for Gmail and Outlook/Microsoft 365
 <td width="50%"><img src="docs/screenshots/accounts.png" alt="Accounts page" /><br/><sub>Multi-account management</sub></td>
 <td width="50%"><img src="docs/screenshots/newsletter-filter.png" alt="Newsletter filter view" /><br/><sub>Newsletters — bulk unsubscribe/delete</sub></td>
 </tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/blocked.png" alt="Blocked senders view" /><br/><sub>Blocked senders — searchable, one click to unblock</sub></td>
+<td width="50%"></td>
+</tr>
 </table>
 
 ## What It Does
@@ -33,6 +37,7 @@ MailGuard connects to your own Gmail and Outlook accounts via OAuth (you create 
 - **Archives newsletters** out of your inbox to a dedicated folder.
 - **Audits inbox rules** for auto-forwarding and other persistence vectors.
 - **Organizes by sender** or brand, nesting folders under a collapsible parent to keep your inbox clean.
+- **Tracks and manages blocked senders** in a searchable list — unblocking removes both the local policy and the provider-side Gmail filter / Outlook rule, so a sender doesn't stay silently blocked at the provider after you've unblocked it locally.
 
 ## Features
 
