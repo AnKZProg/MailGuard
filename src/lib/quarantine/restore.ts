@@ -39,7 +39,16 @@ export async function restoreMessage(messageId: string): Promise<void> {
 
   await db.$transaction([
     db.quarantineItem.update({ where: { messageId }, data: { restoredAt: new Date() } }),
-    db.message.update({ where: { id: messageId }, data: { state: "INBOX" } }),
+    // providerSpamFlag: false too, not just state — reclassifyProviderFlaggedMessages
+    // (run on every sync) re-scans every INBOX message with providerSpamFlag still
+    // true and reclassifies it. Leaving the flag set meant a restored message got
+    // re-scored with the strong "provider already flagged this as spam" signal
+    // (weight 0.65) on the very next sync, reproduced the same SPAM/PHISHING
+    // verdict, and classifyAndPersist silently re-quarantined it — undoing the
+    // restore within minutes, with nothing in the UI explaining why the message
+    // vanished again. A manual restore is the user overriding the provider's own
+    // opinion on this specific message, so that signal must not still apply after.
+    db.message.update({ where: { id: messageId }, data: { state: "INBOX", providerSpamFlag: false } }),
     db.auditLog.create({
       data: {
         actor: "USER",

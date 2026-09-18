@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { Ban, Search } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { BlockedSenderRow } from "@/components/blocked/BlockedSenderRow";
-import { listBlockedSenders } from "@/lib/queries/blocked-senders";
+import { BlockedSendersList } from "@/components/blocked/BlockedSendersList";
+import { listBlockedSenders, toClientPolicies } from "@/lib/queries/blocked-senders";
 
 export const dynamic = "force-dynamic";
 
@@ -52,19 +51,7 @@ export default async function BlockedPage({ searchParams }: Props) {
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-2 p-6">
-          {policies.map((policy) => (
-            <BlockedSenderRow key={policy.id} policy={policy} />
-          ))}
-          {nextCursor && (
-            <Link
-              href={{ pathname: "/blocked", query: q ? { cursor: nextCursor, q } : { cursor: nextCursor } }}
-              className="rounded-lg border border-border-subtle px-4 py-2.5 text-center text-[12px] text-accent hover:underline"
-            >
-              Charger plus
-            </Link>
-          )}
-        </div>
+        <BlockedSendersList initialPolicies={toClientPolicies(policies)} initialNextCursor={nextCursor} query={q} />
       )}
     </div>
   );
