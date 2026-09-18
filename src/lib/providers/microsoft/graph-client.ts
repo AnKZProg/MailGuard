@@ -347,3 +347,29 @@ export async function ensureSenderBlockRule(
     throw new Error(`Création de la règle Outlook échouée pour ${matchValue} (${response.status})`);
   }
 }
+
+/**
+ * Removes the inbox rule created by ensureSenderBlockRule for `pattern`, if
+ * one exists. No-ops (not an error) if it was already removed, e.g. manually
+ * in Outlook's own UI.
+ */
+export async function removeSenderBlockRule(accessToken: string, pattern: string, scope: "ADDRESS" | "DOMAIN"): Promise<void> {
+  const matchValue = scope === "DOMAIN" ? `@${pattern}` : pattern;
+  const existing = await listInboxRules(accessToken);
+  const match = existing.find((rule) => {
+    const conditions = rule.conditions as RuleConditions | undefined;
+    if (scope === "ADDRESS") {
+      return (conditions?.fromAddresses ?? []).some((a) => a.emailAddress?.address?.toLowerCase() === matchValue.toLowerCase());
+    }
+    return (conditions?.senderContains ?? []).some((s) => s.toLowerCase() === matchValue.toLowerCase());
+  });
+  if (!match) return;
+
+  const response = await fetch(`${GRAPH_BASE}/me/mailFolders/inbox/messageRules/${match.id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`Suppression de la règle Outlook échouée pour ${matchValue} (${response.status})`);
+  }
+}

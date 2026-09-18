@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, ShieldAlert, Archive, Users, ShieldCheck } from "lucide-react";
+import { Inbox, ShieldAlert, Archive, Users, ShieldCheck, Ban } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { SyncButton } from "@/components/mail/SyncButton";
 import { ShadowModeQuickToggle } from "./ShadowModeQuickToggle";
@@ -10,6 +10,7 @@ import { ShadowModeQuickToggle } from "./ShadowModeQuickToggle";
 const NAV_ITEMS = [
   { href: "/", label: "Boîte unifiée", icon: Inbox },
   { href: "/quarantine", label: "Quarantaine", icon: Archive },
+  { href: "/blocked", label: "Bloqués", icon: Ban },
   { href: "/security", label: "Sécurité", icon: ShieldAlert },
   { href: "/accounts", label: "Comptes", icon: Users },
 ] as const;

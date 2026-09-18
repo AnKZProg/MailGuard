@@ -65,3 +65,25 @@ export async function ensureSenderBlockFilter(accessToken: string, matchValue: s
     throw new Error(`Création du filtre Gmail échouée pour ${matchValue} (${response.status})`);
   }
 }
+
+/**
+ * Removes the server-side Gmail filter created by ensureSenderBlockFilter for
+ * `matchValue`, if one exists. No-ops (not an error) if it was already
+ * removed, e.g. manually in Gmail's own UI.
+ */
+export async function removeSenderBlockFilter(accessToken: string, matchValue: string): Promise<void> {
+  const existing = await listFilters(accessToken);
+  const match = existing.find((f) => {
+    const from = f.criteria?.from;
+    return typeof from === "string" && from.toLowerCase() === matchValue.toLowerCase();
+  });
+  if (!match) return;
+
+  const response = await fetch(`${GMAIL_BASE}/settings/filters/${match.id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`Suppression du filtre Gmail échouée pour ${matchValue} (${response.status})`);
+  }
+}

@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { getValidAccessToken } from "@/lib/providers/token-manager";
-import { ensureSenderBlockFilter } from "@/lib/providers/google/gmail-settings-client";
-import { ensureSenderBlockRule, getWellKnownFolderId } from "@/lib/providers/microsoft/graph-client";
+import { ensureSenderBlockFilter, removeSenderBlockFilter } from "@/lib/providers/google/gmail-settings-client";
+import { ensureSenderBlockRule, removeSenderBlockRule, getWellKnownFolderId } from "@/lib/providers/microsoft/graph-client";
 
 export type BlockScope = "ADDRESS" | "DOMAIN";
 
@@ -63,4 +63,40 @@ export async function blockSenderPermanently(
     console.error(`[block-sender] règle côté fournisseur échouée pour ${pattern}`, err);
     return { providerRuleCreated: false };
   }
+}
+
+/**
+ * Reverses blockSenderPermanently: removes the local SenderPolicy row and,
+ * best effort, the provider-side Gmail filter / Outlook rule installed
+ * alongside it — without this second step, the provider would keep silently
+ * trashing mail from this sender even though MailGuard no longer treats it
+ * as blocked. Same trade-off as the block path: a failed provider-side
+ * removal doesn't block deleting the local policy, since the alternative
+ * (leaving the block in place because the provider call failed) is worse
+ * than a stale provider rule the user can also remove by hand.
+ */
+export async function unblockSender(policyId: string): Promise<{ providerRuleRemoved: boolean }> {
+  const policy = await db.senderPolicy.findUniqueOrThrow({ where: { id: policyId } });
+  if (!policy.accountId) {
+    await db.senderPolicy.delete({ where: { id: policyId } });
+    return { providerRuleRemoved: false };
+  }
+
+  let providerRuleRemoved = false;
+  try {
+    const account = await db.account.findUniqueOrThrow({ where: { id: policy.accountId } });
+    const accessToken = await getValidAccessToken(policy.accountId);
+    if (account.provider === "GOOGLE") {
+      const matchValue = policy.scope === "DOMAIN" ? `@${policy.pattern}` : policy.pattern;
+      await removeSenderBlockFilter(accessToken, matchValue);
+    } else {
+      await removeSenderBlockRule(accessToken, policy.pattern, policy.scope);
+    }
+    providerRuleRemoved = true;
+  } catch (err) {
+    console.error(`[block-sender] suppression de la règle fournisseur échouée pour ${policy.pattern}`, err);
+  }
+
+  await db.senderPolicy.delete({ where: { id: policyId } });
+  return { providerRuleRemoved };
 }
