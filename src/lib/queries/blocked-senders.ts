@@ -2,9 +2,13 @@ import { db } from "@/lib/db";
 
 const PAGE_SIZE = 50;
 
-export async function listBlockedSenders(cursor?: string) {
+export async function listBlockedSenders(cursor?: string, query?: string) {
+  // SQLite's `LIKE` (what Prisma's `contains` compiles to here) is already
+  // case-insensitive for ASCII, which covers real email addresses/domains —
+  // no `mode: "insensitive"` needed (and it isn't supported on this provider).
+  const trimmedQuery = query?.trim();
   const policies = await db.senderPolicy.findMany({
-    where: { verdict: "BLOCK" },
+    where: { verdict: "BLOCK", ...(trimmedQuery ? { pattern: { contains: trimmedQuery } } : {}) },
     include: { account: { select: { emailAddress: true } } },
     orderBy: { createdAt: "desc" },
     take: PAGE_SIZE + 1,
