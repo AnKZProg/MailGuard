@@ -19,5 +19,6 @@ export async function disconnectAccount(formData: FormData): Promise<void> {
 
 export async function toggleShadowMode(formData: FormData): Promise<void> {
   await setShadowMode(formData.get("enabled") === "true");
-  revalidatePath("/accounts");
+  // The sidebar's status pill and toggle live in the root layout — refresh every page, not just /accounts.
+  revalidatePath("/", "layout");
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { cookies } from "next/headers";
 import { Toaster } from "sonner";
+import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 import { AppShell } from "@/components/layout/AppShell";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import "./globals.css";
@@ -22,11 +24,17 @@ export const metadata: Metadata = {
   description: "Tri, quarantaine et audit de sécurité pour toutes tes boîtes mail, en local.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <html lang="fr" className={`${inter.variable} ${mono.variable} h-full`} suppressHydrationWarning>
+    <html
+      lang="fr"
+      className={`${inter.variable} ${mono.variable} h-full`}
+      data-theme={theme === "system" ? undefined : theme}
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col">
-        <AppShell>{children}</AppShell>
+        <AppShell theme={theme}>{children}</AppShell>
         <CommandPalette />
         <Toaster
           position="bottom-right"

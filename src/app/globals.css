@@ -28,6 +28,15 @@
   --focus-ring: oklch(46% 0.13 240 / 0.5);
   --shadow-color: 250 15% 10%;
 
+  --avatar-bg-l: 92%;
+  --avatar-bg-c: 0.05;
+  --avatar-fg-l: 42%;
+  --avatar-fg-c: 0.12;
+  --unread-dot: oklch(55% 0.17 245);
+  --row-selected: oklch(95% 0.025 240);
+  --elevation-sm: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 1px 1px hsl(var(--shadow-color) / 0.04);
+  --elevation-lg: 0 12px 32px -8px hsl(var(--shadow-color) / 0.18), 0 2px 6px hsl(var(--shadow-color) / 0.06);
+
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 10px;
@@ -67,6 +76,13 @@
     --verdict-spam-soft: oklch(27% 0.006 250);
     --verdict-phishing: oklch(72% 0.17 25);
     --verdict-phishing-soft: oklch(30% 0.08 25);
+    --avatar-bg-l: 32%;
+    --avatar-bg-c: 0.05;
+    --avatar-fg-l: 86%;
+    --avatar-fg-c: 0.09;
+    --unread-dot: oklch(72% 0.13 240);
+    --row-selected: oklch(26% 0.035 240);
+    --shadow-color: 250 30% 3%;
   }
 }
 
@@ -94,6 +110,13 @@
   --verdict-spam-soft: oklch(27% 0.006 250);
   --verdict-phishing: oklch(72% 0.17 25);
   --verdict-phishing-soft: oklch(30% 0.08 25);
+  --avatar-bg-l: 32%;
+  --avatar-bg-c: 0.05;
+  --avatar-fg-l: 86%;
+  --avatar-fg-c: 0.09;
+  --unread-dot: oklch(72% 0.13 240);
+  --row-selected: oklch(26% 0.035 240);
+  --shadow-color: 250 30% 3%;
 }
 
 @theme inline {
@@ -126,6 +149,8 @@
   --color-account-5: var(--account-color-5);
   --color-account-6: var(--account-color-6);
   --color-account-7: var(--account-color-7);
+  --color-unread: var(--unread-dot);
+  --color-row-selected: var(--row-selected);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-mono-body);
 }

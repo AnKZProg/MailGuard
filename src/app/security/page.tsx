@@ -1,7 +1,8 @@
-import { ShieldAlert, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, ShieldCheck, Check } from "lucide-react";
 import { db } from "@/lib/db";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FindingRow } from "@/components/security/FindingRow";
+import { formatDateTime } from "@/lib/format/mail-date";
 
 export const dynamic = "force-dynamic";
 
@@ -29,22 +30,15 @@ export default async function SecurityPage() {
     }),
   ]);
 
-  const unacknowledgedCritical = findings.filter((f) => f.severity === "CRITICAL" && !f.acknowledgedAt);
+  const critical = findings.filter((f) => f.severity === "CRITICAL" && !f.acknowledgedAt);
+  const others = findings.filter((f) => !(f.severity === "CRITICAL" && !f.acknowledgedAt));
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
-      <header className="flex h-14 shrink-0 items-center border-b border-border-subtle px-6">
-        <h1 className="text-[13px] font-semibold text-text-primary">Sécurité</h1>
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle px-6">
+        <h1 className="text-[14px] font-semibold tracking-tight text-text-primary">Sécurité</h1>
+        <span className="text-[12px] text-text-tertiary">Audit des accès à tes comptes</span>
       </header>
-
-      {unacknowledgedCritical.length > 0 && (
-        <div className="flex items-center gap-2.5 border-b border-verdict-phishing/30 bg-verdict-phishing-soft px-6 py-3 text-[13px] text-verdict-phishing">
-          <ShieldAlert className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-          {unacknowledgedCritical.length === 1
-            ? "1 règle de transfert suspecte détectée — vérifie si tu l'as configurée toi-même."
-            : `${unacknowledgedCritical.length} règles de transfert suspectes détectées — vérifie si tu les as configurées toi-même.`}
-        </div>
-      )}
 
       {accounts.length === 0 ? (
         <div className="flex flex-1 items-center justify-center p-6">
@@ -55,55 +49,72 @@ export default async function SecurityPage() {
           />
         </div>
       ) : (
-        <div className="flex flex-col gap-5 p-6">
-          <div className="rounded-lg border border-border-subtle bg-surface-1">
-            <div className="border-b border-border-subtle px-4 py-3">
-              <p className="text-[13px] font-medium text-text-primary">Vérifications actives</p>
-              <p className="mt-0.5 text-[12px] text-text-secondary">
-                Relancées à chaque synchronisation — persistance d&apos;accès classique après une prise de contrôle de
-                compte (transfert silencieux configuré par un attaquant pour continuer à lire le courrier même après
-                un changement de mot de passe).
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
+          {critical.length > 0 ? (
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-lg border border-verdict-phishing/30 bg-verdict-phishing-soft px-4 py-3"
+            >
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-verdict-phishing" strokeWidth={1.75} />
+              <div>
+                <p className="text-[13px] font-semibold text-verdict-phishing">
+                  {critical.length === 1 ? "Une règle de transfert à vérifier" : `${critical.length} règles de transfert à vérifier`}
+                </p>
+                <p className="mt-0.5 text-[12.5px] text-text-secondary">
+                  Si tu ne les as pas créées toi-même, quelqu&apos;un peut lire ton courrier à ta place. Change le mot de
+                  passe du compte, puis supprime la règle.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 rounded-lg border border-verdict-legitimate/25 bg-verdict-legitimate-soft px-4 py-3">
+              <ShieldCheck className="h-4 w-4 shrink-0 text-verdict-legitimate" strokeWidth={1.75} />
+              <p className="text-[13px] font-medium text-text-primary">
+                Aucun transfert suspect sur {accounts.length === 1 ? "ton compte" : `tes ${accounts.length} comptes`}.
               </p>
             </div>
-            <div className="divide-y divide-border-subtle">
+          )}
+
+          <section aria-labelledby="checks-title" className="flex flex-col gap-2">
+            <h2 id="checks-title" className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+              Vérifications automatiques
+            </h2>
+            <div className="divide-y divide-border-subtle overflow-hidden rounded-lg border border-border-subtle bg-surface-0">
               {accounts.map((account) => {
                 const checks = account.provider === "GOOGLE" ? GOOGLE_CHECKS : MICROSOFT_CHECKS;
                 return (
-                  <div key={account.id} className="flex flex-col gap-1.5 px-4 py-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[12.5px] font-medium text-text-primary">{account.emailAddress}</span>
-                      <span className="text-[11px] text-text-tertiary">
-                        {account.lastSyncAt ? `Vérifié le ${account.lastSyncAt.toLocaleString("fr-FR")}` : "Jamais synchronisé"}
+                  <div key={account.id} className="flex flex-col gap-2 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="truncate text-[13px] font-medium text-text-primary">{account.emailAddress}</span>
+                      <span className="shrink-0 text-[11.5px] tabular-nums text-text-tertiary">
+                        {account.lastSyncAt ? `vérifié ${formatDateTime(account.lastSyncAt)}` : "jamais vérifié"}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <ul className="flex flex-wrap gap-x-4 gap-y-1">
                       {checks.map((check) => (
-                        <span key={check} className="flex items-center gap-1.5 text-[11.5px] text-text-secondary">
-                          <CheckCircle2 className="h-3 w-3 shrink-0 text-verdict-legitimate" strokeWidth={2} />
+                        <li key={check} className="flex items-center gap-1.5 text-[12px] text-text-secondary">
+                          <Check className="h-3 w-3 shrink-0 text-text-tertiary" strokeWidth={2.25} />
                           {check}
-                        </span>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          {findings.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center py-10">
-              <EmptyState
-                icon={ShieldCheck}
-                title="Aucune règle suspecte détectée"
-                description="Aucun transfert automatique ni règle de redirection suspecte sur tes comptes connectés, d'après les vérifications listées ci-dessus."
-              />
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {findings.map((finding) => (
-                <FindingRow key={finding.id} finding={finding} />
-              ))}
-            </div>
+          {others.length > 0 && (
+            <section aria-labelledby="findings-title" className="flex flex-col gap-2">
+              <h2 id="findings-title" className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+                À examiner
+              </h2>
+              <div className="flex flex-col gap-2">
+                {others.map((finding) => (
+                  <FindingRow key={finding.id} finding={finding} />
+                ))}
+              </div>
+            </section>
           )}
         </div>
       )}

@@ -13,11 +13,11 @@ type Props = { messageId: string; current: Verdict | null; confirmedByUser: bool
 
 export function VerdictCorrection({ messageId, current, confirmedByUser }: Props) {
   return (
-    <div className="flex items-center gap-2 border-b border-border-subtle px-4 py-2">
-      <span className="text-[11px] text-text-tertiary" title="MailGuard apprend de chaque correction, en local">
-        {confirmedByUser ? "Confirmé :" : "Ce mail est :"}
+    <div className="flex items-center gap-2">
+      <span className="text-[12px] text-text-tertiary" title="MailGuard apprend de chaque correction, en local">
+        {confirmedByUser ? "Verdict confirmé :" : "Verdict — clique pour corriger :"}
       </span>
-      <div className="flex items-center gap-1">
+      <div role="group" aria-label="Corriger le verdict" className="flex items-center gap-0.5 rounded-md border border-border-subtle bg-surface-0 p-0.5">
         {OPTIONS.map((option) => {
           const active = option.verdict === current;
           return (
@@ -27,8 +27,8 @@ export function VerdictCorrection({ messageId, current, confirmedByUser }: Props
                 disabled={active && confirmedByUser}
                 aria-pressed={active}
                 className={cn(
-                  "h-6 rounded px-2 text-[11px] transition-colors",
-                  active ? option.activeClass : "text-text-secondary hover:bg-surface-2",
+                  "h-6 rounded px-2 text-[11.5px] font-medium transition-colors disabled:cursor-default",
+                  active ? option.activeClass : "text-text-secondary hover:bg-surface-2 hover:text-text-primary",
                 )}
               >
                 {option.label}
