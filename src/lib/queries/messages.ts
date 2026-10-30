@@ -5,6 +5,8 @@ export type MessageListFilters = {
   accountId?: string;
   verdict?: Verdict;
   state?: MessageState;
+  /** Substring match on sender, subject and snippet (SQLite LIKE — case-insensitive for ASCII). */
+  search?: string;
   cursor?: string;
 };
 
@@ -16,6 +18,16 @@ export async function listMessages(filters: MessageListFilters) {
       accountId: filters.accountId,
       verdict: filters.verdict,
       state: filters.state ?? "INBOX",
+      ...(filters.search
+        ? {
+            OR: [
+              { fromAddress: { contains: filters.search } },
+              { fromDisplayName: { contains: filters.search } },
+              { subject: { contains: filters.search } },
+              { snippet: { contains: filters.search } },
+            ],
+          }
+        : {}),
     },
     include: { account: { select: { emailAddress: true, provider: true, colorToken: true } } },
     orderBy: { receivedAt: "desc" },
