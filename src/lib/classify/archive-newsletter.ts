@@ -22,3 +22,16 @@ export async function archiveNewsletterMessage(messageId: string): Promise<void>
     await withBackoff(() => moveMessage(accessToken, message.providerMessageId, archiveId));
   }
 }
+
+/** Reverse of archiveNewsletterMessage, for a message the user says isn't a newsletter after all. */
+export async function unarchiveMessage(messageId: string): Promise<void> {
+  const message = await db.message.findUniqueOrThrow({ where: { id: messageId }, include: { account: true } });
+  const accessToken = await getValidAccessToken(message.accountId);
+
+  if (message.account.provider === "GOOGLE") {
+    await withBackoff(() => modifyLabels(accessToken, message.providerMessageId, ["INBOX"], []));
+  } else {
+    const inboxId = await withBackoff(() => getWellKnownFolderId(accessToken, "inbox"));
+    await withBackoff(() => moveMessage(accessToken, message.providerMessageId, inboxId));
+  }
+}

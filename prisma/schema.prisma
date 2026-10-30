@@ -128,6 +128,8 @@ model Message {
   score              Float?
   state              MessageState @default(INBOX)
   classifiedAt       DateTime?
+  /// Verdict the user explicitly confirmed or corrected — training label for the local learner.
+  userVerdict        Verdict?
 
   signals            MessageSignal[]
   quarantineItem     QuarantineItem?
@@ -142,6 +144,7 @@ model Message {
   // table scan + sort on every load and every "load more".
   @@index([state, receivedAt])
   @@index([state, verdict])
+  @@index([accountId, fromAddress, receivedAt])
 }
 
 model MessageSignal {
@@ -226,4 +229,19 @@ model AuditLog {
 model AppSetting {
   key   String @id
   value String
+}
+
+/// Local naive-Bayes learner: how many training messages of each verdict contained a token.
+/// Kept separately from Message so the model survives the rolling sync window and purges.
+model LearnedToken {
+  token   String
+  verdict Verdict
+  count   Int     @default(0)
+
+  @@id([token, verdict])
+}
+
+model LearnedClass {
+  verdict Verdict @id
+  docs    Int     @default(0)
 }

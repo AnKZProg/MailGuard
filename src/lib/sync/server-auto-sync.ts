@@ -1,4 +1,5 @@
 import { syncAllActiveAccounts } from "@/lib/sync/run-sync";
+import { bootstrapLearnerOnce } from "@/lib/classify/learner/store";
 
 const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const INITIAL_SYNC_DELAY_MS = 10 * 1000;
@@ -31,7 +32,10 @@ export function startServerAutoSync(): void {
   globalThis.__mailguardServerAutoSyncStarted = true;
 
   setTimeout(() => {
-    runSync().catch((err) => console.error("[server-auto-sync] échec de la synchro initiale", err));
+    bootstrapLearnerOnce()
+      .catch((err) => console.error("[learner] amorçage échoué, nouvel essai au prochain démarrage", err))
+      .then(runSync)
+      .catch((err) => console.error("[server-auto-sync] échec de la synchro initiale", err));
   }, INITIAL_SYNC_DELAY_MS);
 
   setInterval(() => {
