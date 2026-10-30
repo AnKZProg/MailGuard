@@ -1,10 +1,15 @@
 import type { MessageFeatures } from "@/lib/classify/features";
 import type { Signal } from "@/lib/classify/signal";
-import { PHISHING_SUBJECT_KEYWORDS, SPAM_SUBJECT_KEYWORDS } from "@/lib/classify/config";
+import {
+  DELIVERY_FEE_KEYWORDS,
+  PHISHING_SUBJECT_KEYWORDS,
+  ROMANCE_SCAM_KEYWORDS,
+  SPAM_SUBJECT_KEYWORDS,
+} from "@/lib/classify/config";
 
 /**
  * Keyword matching on the subject, plus the provider's snippet for the
- * messaging-app lure only — never the full body.
+ * scam-opener rules — never the full body.
  */
 export function contentLiteSignals(features: MessageFeatures): Signal[] {
   const signals: Signal[] = [];
@@ -29,28 +34,38 @@ export function contentLiteSignals(features: MessageFeatures): Signal[] {
     });
   }
 
-  const lureHit = MESSAGING_APP_LURES.find(
-    (app) => features.subjectLower.includes(app) || features.snippetLower.includes(app),
-  );
-  if (lureHit) {
-    signals.push(
-      features.isFirstContact
-        ? {
-            ruleId: "content.messaging_lure_first_contact",
-            category: "spam",
-            weight: 0.55,
-            detail: `Expéditeur inconnu qui t'invite à poursuivre sur ${lureHit} (arnaque classique)`,
-          }
-        : {
-            ruleId: "content.messaging_lure",
-            category: "spam",
-            weight: 0.15,
-            detail: `Mentionne ${lureHit}`,
-          },
-    );
+  // Person-to-person scams only: a newsletter or a provider notice ("you shared
+  // data with WhatsApp") mentioning these words is not someone luring you.
+  if (!features.isBulk) {
+    const lure = firstHit(features, MESSAGING_APP_LURES);
+    if (lure) signals.push(strangerSignal(features, "messaging_lure", lure, `t'invite à poursuivre sur ${lure}`));
+
+    const romance = firstHit(features, ROMANCE_SCAM_KEYWORDS);
+    if (romance) signals.push(strangerSignal(features, "romance_opener", romance, `ouvre la conversation par « ${romance} »`));
+
+    const fee = firstHit(features, DELIVERY_FEE_KEYWORDS);
+    if (fee) {
+      signals.push({
+        ruleId: "content.delivery_fee",
+        category: "phishing",
+        weight: 0.2,
+        detail: `Réclame des « ${fee} »`,
+      });
+    }
   }
 
   return signals;
+}
+
+function firstHit(features: MessageFeatures, keywords: readonly string[]): string | undefined {
+  return keywords.find((k) => features.subjectLower.includes(k) || features.snippetLower.includes(k));
+}
+
+/** Strong from a first-time sender (classic scam opener), merely explanatory from a known correspondent. */
+function strangerSignal(features: MessageFeatures, rule: string, hit: string, what: string): Signal {
+  return features.isFirstContact
+    ? { ruleId: `content.${rule}_first_contact`, category: "spam", weight: 0.55, detail: `Expéditeur inconnu qui ${what} (arnaque classique)` }
+    : { ruleId: `content.${rule}`, category: "spam", weight: 0.15, detail: `Mentionne « ${hit} »` };
 }
 
 /** Romance/crypto/job scams move the victim off email to an unmonitored chat app. */
