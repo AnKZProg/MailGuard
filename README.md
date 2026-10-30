@@ -83,13 +83,13 @@ npm run db:push
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and click **Accounts** to connect your first mailbox.
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000) (a `localhost` URL is redirected there automatically) and click **Accounts** to connect your first mailbox.
 
 ## Commands
 
 ```bash
 # Development
-npm run dev         # Start dev server (http://localhost:3000)
+npm run dev         # Start dev server (http://127.0.0.1:3000)
 npm run build       # Production build
 npm start           # Start production server (requires build first)
 
