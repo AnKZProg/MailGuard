@@ -246,6 +246,13 @@ export async function listTrashMessageIds(accessToken: string): Promise<string[]
 
 /** Enumerates every message currently carrying the given label id (used to find
  * whatever is still sitting in a custom label for cleanup/migration). */
+/** Gmail's own full-text search (subject, body, attachments names…), first page only. */
+export async function searchMessageIds(accessToken: string, query: string, limit: number): Promise<string[]> {
+  const response = await gmailFetch(accessToken, "/messages", { q: query, maxResults: String(limit) });
+  const page = (await response.json()) as ListMessagesResponse;
+  return (page.messages ?? []).map((m) => m.id);
+}
+
 export async function listMessageIdsByLabel(accessToken: string, labelId: string): Promise<string[]> {
   const ids: string[] = [];
   let pageToken: string | undefined;

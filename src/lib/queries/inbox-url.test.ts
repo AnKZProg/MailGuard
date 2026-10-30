@@ -14,6 +14,14 @@ describe("parseInboxQuery", () => {
   });
 });
 
+describe("parseInboxQuery — content search flag", () => {
+  it("only enables content search when there is something to search for", () => {
+    expect(parseInboxQuery({ q: "facture", body: "1" }).body).toBe("1");
+    expect(parseInboxQuery({ body: "1" }).body).toBeUndefined();
+    expect(parseInboxQuery({ q: "facture", body: "yes" }).body).toBeUndefined();
+  });
+});
+
 describe("inboxHref", () => {
   it("keeps only set filters", () => {
     expect(inboxHref({})).toBe("/");

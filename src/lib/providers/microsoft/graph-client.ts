@@ -71,6 +71,18 @@ type ListMessagesResponse = {
   "@odata.nextLink"?: string;
 };
 
+/** Graph's full-text $search across every folder, first page only. */
+export async function searchMessageIds(accessToken: string, query: string, limit: number): Promise<string[]> {
+  const url = new URL(`${GRAPH_BASE}/me/messages`);
+  // $search takes a double-quoted KQL string — strip quotes/backslashes so user text can't break out of it.
+  url.searchParams.set("$search", `"${query.replace(/["\\]/g, " ").trim()}"`);
+  url.searchParams.set("$top", String(limit));
+  url.searchParams.set("$select", "id");
+  const response = await graphFetch(accessToken, url.toString());
+  const page = (await response.json()) as { value: { id: string }[] };
+  return page.value.map((m) => m.id);
+}
+
 export async function listMessages(
   accessToken: string,
   sinceIso: string,
