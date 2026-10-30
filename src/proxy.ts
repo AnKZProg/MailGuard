@@ -11,10 +11,20 @@ export function proxy(request: NextRequest) {
 
   if (decision === "allow") return NextResponse.next();
   if (decision === "canonicalize") {
-    const target = new URL(request.nextUrl.pathname + request.nextUrl.search, appUrl);
-    return NextResponse.redirect(target, 308);
+    // Not a 3xx: Next treats localhost and 127.0.0.1 as the same origin and
+    // rewrites any proxy Location header to a relative "/", which would loop.
+    const target = new URL(request.nextUrl.pathname + request.nextUrl.search, appUrl).toString();
+    return new NextResponse(canonicalRedirectPage(target), {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+    });
   }
   return new NextResponse("Host non autorisé", { status: 421, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+}
+
+function canonicalRedirectPage(target: string): string {
+  const escaped = target.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  return `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${escaped}"><title>MailGuard</title><p>Redirection vers <a href="${escaped}">${escaped}</a>…</p>`;
 }
 
 export const config = {
