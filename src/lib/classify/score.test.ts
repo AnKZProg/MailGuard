@@ -158,3 +158,55 @@ describe("classify — golden fixtures", () => {
     expect(result.verdict).toBe("LEGITIMATE");
   });
 });
+
+describe("classify — messaging-app lure", () => {
+  const scam = message({
+    fromAddress: "clothilde@univ.example",
+    fromDomain: "univ.example",
+    subject: "I:Agréable soirée...",
+    snippet: "Bonjour, je suis Brigitte. Pourrions-nous entamer un dialogue ? Directement par : WHATSAPP",
+  });
+
+  it("an unknown sender pushing the conversation to WhatsApp is SPAM", () => {
+    expect(classify(extractFeatures(scam, { isFirstContact: true }), null).verdict).toBe("SPAM");
+  });
+
+  it("the same mention from a known correspondent stays LEGITIMATE", () => {
+    expect(classify(extractFeatures(scam, { isFirstContact: false }), null).verdict).toBe("LEGITIMATE");
+  });
+});
+
+describe("classify — learned prediction", () => {
+  const plain = extractFeatures(message());
+  const phishing = extractFeatures(
+    message({
+      fromAddress: "support@paypa1.com",
+      fromDomain: "paypa1.com",
+      fromDisplayName: "PayPal Support",
+      replyToDomain: "attacker.ru",
+      subject: "Vérifiez votre compte — connexion suspecte détectée",
+      authSpf: "fail",
+      authDkim: "fail",
+      authDmarc: "fail",
+    }),
+  );
+
+  it("upgrades a rule-LEGITIMATE message to SPAM at ≥ 0.97 and explains why", () => {
+    const result = classify(plain, null, { verdict: "SPAM", probability: 0.98 });
+    expect(result.verdict).toBe("SPAM");
+    expect(result.shouldQuarantine).toBe(true);
+    expect(result.signals.some((s) => s.ruleId === "learned.user_feedback")).toBe(true);
+  });
+
+  it("ignores a learned prediction below the threshold", () => {
+    expect(classify(plain, null, { verdict: "SPAM", probability: 0.9 }).verdict).toBe("LEGITIMATE");
+  });
+
+  it("never lets the learner clear a strong phishing verdict", () => {
+    expect(classify(phishing, null, { verdict: "LEGITIMATE", probability: 0.9999 }).verdict).toBe("PHISHING");
+  });
+
+  it("sender policy still beats the learner", () => {
+    expect(classify(plain, "ALLOW", { verdict: "SPAM", probability: 1 }).verdict).toBe("LEGITIMATE");
+  });
+});

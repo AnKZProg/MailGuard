@@ -1,4 +1,5 @@
-export type SignalCategory = "phishing" | "spam" | "newsletter";
+/** "learned" is explanatory only — it never adds to a category score. */
+export type SignalCategory = "phishing" | "spam" | "newsletter" | "learned";
 
 export type Signal = {
   ruleId: string;

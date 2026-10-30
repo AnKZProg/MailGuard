@@ -4,6 +4,7 @@ import { classify, type PolicyOverride, type Verdict } from "@/lib/classify/scor
 import { isShadowModeEnabled } from "@/lib/settings/app-settings";
 import { quarantineMessage } from "@/lib/quarantine/quarantine";
 import { archiveNewsletterMessage } from "@/lib/classify/archive-newsletter";
+import { predictForMessage } from "@/lib/classify/learner/store";
 import type { SenderPolicy } from "@prisma/client";
 
 /** Sender policies and shadow-mode are effectively constant for the duration
@@ -44,8 +45,22 @@ export async function classifyAndPersist(messageId: string, context?: ClassifyCo
   const message = await db.message.findUniqueOrThrow({ where: { id: messageId } });
 
   const policyOverride = resolvePolicyOverride(ctx.senderPolicies, message.accountId, message.fromAddress, message.fromDomain);
-  const features = extractFeatures(message);
-  const result = classify(features, policyOverride);
+  const earlierFromSender = await db.message.findFirst({
+    where: { accountId: message.accountId, fromAddress: message.fromAddress, receivedAt: { lt: message.receivedAt } },
+    select: { id: true },
+  });
+  const features = extractFeatures(message, { isFirstContact: !earlierFromSender });
+  const learned = policyOverride ? null : await predictForMessage(message);
+  const computed = classify(features, policyOverride, learned);
+  // A verdict the user set by hand on this exact message is final — a later re-scan must not undo it.
+  const result =
+    message.userVerdict && !policyOverride
+      ? {
+          ...computed,
+          verdict: message.userVerdict,
+          shouldQuarantine: message.userVerdict === "SPAM" || message.userVerdict === "PHISHING",
+        }
+      : computed;
 
   await db.$transaction([
     db.message.update({

@@ -6,6 +6,10 @@ import { trashMessageById } from "@/lib/mail/trash";
 import { quarantineMessage } from "@/lib/quarantine/quarantine";
 import { restoreMessage } from "@/lib/quarantine/restore";
 import { blockSenderPermanently } from "@/lib/policy/block-sender";
+import { correctVerdict, learnQuietly } from "@/lib/classify/correct-verdict";
+import type { Verdict } from "@prisma/client";
+
+const VERDICTS: readonly Verdict[] = ["LEGITIMATE", "NEWSLETTER", "SPAM", "PHISHING"];
 
 async function writeAuditLog(action: string, accountId: string, messageIds: string[]) {
   await db.auditLog.create({ data: { actor: "USER", action, accountId, messageIds: JSON.stringify(messageIds) } });
@@ -13,12 +17,14 @@ async function writeAuditLog(action: string, accountId: string, messageIds: stri
 
 export async function quarantineNow(messageId: string): Promise<void> {
   await quarantineMessage(messageId, "spam");
+  await learnQuietly(messageId, "SPAM");
   revalidatePath("/");
   revalidatePath("/quarantine");
 }
 
 export async function restoreNow(messageId: string): Promise<void> {
   await restoreMessage(messageId);
+  await learnQuietly(messageId, "LEGITIMATE");
   revalidatePath("/");
   revalidatePath("/quarantine");
 }
@@ -43,6 +49,7 @@ export async function allowSender(messageId: string, scope: "ADDRESS" | "DOMAIN"
     await db.senderPolicy.update({ where: { id: existing.id }, data: { verdict: "ALLOW" } });
   }
   await writeAuditLog("allow_sender", message.accountId, [messageId]);
+  await learnQuietly(messageId, "LEGITIMATE");
   revalidatePath("/");
 }
 
@@ -56,5 +63,14 @@ export async function blockSender(messageId: string, scope: "ADDRESS" | "DOMAIN"
   const pattern = scope === "ADDRESS" ? message.fromAddress : message.fromDomain;
   await blockSenderPermanently(message.accountId, scope, pattern);
   await writeAuditLog("block_sender", message.accountId, [messageId]);
+  await learnQuietly(messageId, "SPAM");
   revalidatePath("/");
+}
+
+/** "Ce mail est en fait…" — trains the local learner and moves the message accordingly. */
+export async function correctVerdictAction(messageId: string, verdict: Verdict): Promise<void> {
+  if (!VERDICTS.includes(verdict)) throw new Error("Verdict inconnu");
+  await correctVerdict(messageId, verdict);
+  revalidatePath("/");
+  revalidatePath("/quarantine");
 }

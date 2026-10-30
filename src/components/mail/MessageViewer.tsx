@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { VerdictBadge } from "./VerdictBadge";
 import { SignalExplainer } from "./SignalExplainer";
 import { MessageBody } from "./MessageBody";
+import { VerdictCorrection } from "./VerdictCorrection";
 import { quarantineNow, trashNow, allowSender, blockSender } from "@/app/actions/message-actions";
 
 export async function MessageViewer({ messageId }: { messageId: string }) {
@@ -64,6 +65,8 @@ export async function MessageViewer({ messageId }: { messageId: string }) {
           </button>
         </form>
       </div>
+
+      <VerdictCorrection messageId={message.id} current={message.userVerdict ?? message.verdict} confirmedByUser={message.userVerdict !== null} />
 
       {message.signals.length > 0 && (
         <div className="border-b border-border-subtle px-4 py-3">
