@@ -41,7 +41,7 @@ export const PROTECTED_DOMAINS = [
 export const BRAND_ALIASES: { brand: string; domains: string[] }[] = [
   { brand: "amazon", domains: ["amazon.com", "amazon.fr"] },
   { brand: "prime video", domains: ["amazon.com", "amazon.fr", "primevideo.com"] },
-  { brand: "paypal", domains: ["paypal.com"] },
+  { brand: "paypal", domains: ["paypal.com", "paypal.fr"] },
   { brand: "impots", domains: ["impots.gouv.fr"] },
   { brand: "ameli", domains: ["ameli.fr"] },
   { brand: "laposte", domains: ["laposte.fr"] },
@@ -53,6 +53,9 @@ export const BRAND_ALIASES: { brand: string; domains: string[] }[] = [
   { brand: "google", domains: ["google.com"] },
   { brand: "apple", domains: ["apple.com"] },
   { brand: "netflix", domains: ["netflix.com"] },
+  { brand: "dhl", domains: ["dhl.com", "dhl.fr", "dhl.de"] },
+  { brand: "fedex", domains: ["fedex.com"] },
+  { brand: "colissimo", domains: ["laposte.fr", "laposte.info", "colissimo.fr"] },
 ];
 
 export const PHISHING_SUBJECT_KEYWORDS = [
@@ -96,3 +99,18 @@ export const SPAM_SUBJECT_KEYWORDS = [
 ];
 
 export const RISKY_ATTACHMENT_EXTENSIONS = ["exe", "scr", "bat", "cmd", "js", "vbs", "jar", "msi", "ps1"];
+
+/** Package-redelivery scams ask for a tiny fee to "release" a parcel. */
+export const DELIVERY_FEE_KEYWORDS = ["delivery fee", "frais de livraison", "frais de douane", "frais d'expédition", "redelivery", "frais de réexpédition"];
+
+/** Romance/"befriending" scam openers — harmless from someone you know, a strong tell from a stranger. */
+export const ROMANCE_SCAM_KEYWORDS = [
+  "faire connaissance",
+  "rencontre chaleureuse",
+  "entamer un dialogue",
+  "désolée de vous approcher",
+  "désolé de vous approcher",
+  "je suis veuve",
+  "make your acquaintance",
+  "get to know you",
+];
