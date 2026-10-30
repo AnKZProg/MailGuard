@@ -53,11 +53,23 @@ puis **"Accéder à MailGuard (non sécurisé)"**. Répète pour chaque
 compte Gmail (en ajoutant chaque adresse aux utilisateurs test à
 l'étape 3 si elle n'y est pas déjà).
 
-## Limite connue
+## Passer en Production (sinon reconnexion tous les 7 jours)
 
-En mode Test, Google fait expirer les refresh tokens au bout de **7
-jours d'inactivité** de l'app (pas d'usage = perte de connexion, à
-reconnecter en un clic). Si ça devient gênant à l'usage, l'app peut
-passer en statut "Production" sans vérification complète tant qu'elle
-ne demande pas de scopes sensibles supplémentaires — à revoir plus tard
-si besoin.
+En mode Test, Google fait expirer **chaque refresh token 7 jours après sa
+délivrance**, même si l'app tourne en continu : tous les comptes Gmail
+passent en « À reconnecter » une semaine après chaque connexion.
+
+Pour un usage perso (moins de 100 comptes), passe l'app en Production
+sans vérification :
+
+1. **Branding** : renseigne une page d'accueil et un lien vers une
+   politique de confidentialité (ex. le dépôt GitHub et son
+   `PRIVACY.md`), puis ajoute leur domaine dans **Domaines autorisés**.
+2. **Audience** → **Publier l'application** → **Confirmer**.
+3. Reconnecte une dernière fois chaque compte Gmail (les tokens émis en
+   mode Test gardent leur expiration de 7 jours).
+
+L'écran « Google n'a pas validé cette application » reste affiché à la
+connexion (scopes Gmail restreints, app non vérifiée) — clique
+**Paramètres avancés** → **Accéder à MailGuard**. Les tokens n'expirent
+plus ensuite, sauf révocation ou mot de passe changé.
