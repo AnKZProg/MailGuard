@@ -27,6 +27,22 @@ export function InboxFilters({ query, accounts }: Props) {
           className="h-8 w-60 rounded-md border border-border-default bg-surface-1 pl-8 pr-3 text-[12.5px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-accent"
         />
       </div>
+      <label
+        className="flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-1.5 text-[12px] text-text-secondary hover:bg-surface-2"
+        title="Cherche aussi dans le texte des mails, via la recherche de Gmail/Outlook (un peu plus lent)"
+      >
+        <input
+          type="checkbox"
+          name="body"
+          value="1"
+          defaultChecked={query.body === "1"}
+          onChange={(event) => {
+            if (event.currentTarget.form?.q.value) event.currentTarget.form.requestSubmit();
+          }}
+          className="accent-accent"
+        />
+        Dans le contenu
+      </label>
       {accounts.length > 1 && (
         <select
           name="account"
