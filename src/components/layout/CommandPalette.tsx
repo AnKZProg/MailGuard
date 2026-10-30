@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { Inbox, Archive, ShieldAlert, Users, RefreshCw } from "lucide-react";
+import { Inbox, Archive, ShieldAlert, Users, RefreshCw, Ban, Newspaper } from "lucide-react";
 import { toast } from "sonner";
 
 const PAGES = [
   { label: "Boîte unifiée", href: "/", icon: Inbox },
+  { label: "Newsletters", href: "/?verdict=NEWSLETTER", icon: Newspaper },
   { label: "Quarantaine", href: "/quarantine", icon: Archive },
+  { label: "Expéditeurs bloqués", href: "/blocked", icon: Ban },
   { label: "Sécurité", href: "/security", icon: ShieldAlert },
   { label: "Comptes", href: "/accounts", icon: Users },
 ] as const;
@@ -53,7 +55,7 @@ export function CommandPalette() {
     >
       <Command
         onClick={(e) => e.stopPropagation()}
-        className="animate-fade-in w-full max-w-md overflow-hidden rounded-lg border border-border-default bg-surface-1 shadow-2xl"
+        className="animate-fade-in w-full max-w-md overflow-hidden rounded-xl border border-border-default bg-surface-0 shadow-[var(--elevation-lg)]"
         label="Palette de commandes"
       >
         <Command.Input

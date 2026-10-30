@@ -11,22 +11,34 @@ const TABS: { label: string; verdict: Verdict | undefined }[] = [
   { label: "Phishing", verdict: "PHISHING" },
 ];
 
-export function VerdictFilterTabs({ query }: { query: InboxQuery }) {
-  const active = query.verdict;
+type Props = {
+  query: InboxQuery;
+  /** Inbox count per verdict; omitted while a search is active (counts would not match the results). */
+  counts?: Partial<Record<Verdict | "ALL", number>>;
+};
+
+export function VerdictFilterTabs({ query, counts }: Props) {
   return (
-    <nav className="flex items-center gap-1">
+    <nav aria-label="Filtrer par verdict" className="flex items-center gap-0.5 overflow-x-auto">
       {TABS.map(({ label, verdict }) => {
-        const isActive = active === verdict;
+        const isActive = query.verdict === verdict;
+        const count = counts?.[verdict ?? "ALL"];
         return (
           <Link
             key={label}
             href={inboxHref({ ...query, verdict })}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex h-7 items-center rounded-md px-2.5 text-[12px] font-medium transition-colors",
-              isActive ? "bg-accent-soft text-accent-strong" : "text-text-secondary hover:bg-surface-2",
+              "flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium transition-colors",
+              isActive ? "bg-accent-soft text-accent-strong" : "text-text-secondary hover:bg-surface-2 hover:text-text-primary",
             )}
           >
             {label}
+            {count !== undefined && count > 0 && (
+              <span className={cn("tabular-nums text-[11px]", isActive ? "text-accent-strong/80" : "text-text-tertiary")}>
+                {count}
+              </span>
+            )}
           </Link>
         );
       })}
