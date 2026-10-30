@@ -8,7 +8,7 @@ Connecting a Gmail or Outlook account grants MailGuard delegated access to that 
 
 ## What MailGuard never does
 
-- **Email bodies are never read for classification.** The classifier scores mail using structured signals only (headers, sender domain, known patterns) — never message content. This is a deliberate anti-prompt-injection boundary, not just a privacy choice: a malicious email cannot manipulate its own classification.
+- **Full email bodies are never read for classification.** The classifier scores mail using structured signals (headers, sender domain, SPF/DKIM/DMARC, known patterns), the subject, and the short preview snippet the provider already returns. A local Bayesian filter learns word statistics from your own corrections; it counts words, it never interprets them as instructions, and what it learns stays in the local database.
 - **Nothing is sent to a third party.** No telemetry, no analytics, no network calls beyond the official Google/Microsoft APIs you configure yourself with your own OAuth app credentials.
 - **Quarantine never permanently deletes.** Mail classified as spam/phishing moves to your provider's own Trash — recoverable normally, never force-deleted by the automation.
 

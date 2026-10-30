@@ -43,10 +43,11 @@ export default function PrivacyPage() {
         <Section title="Ce que MailGuard ne fait jamais">
           <ul className="list-disc space-y-1.5 pl-5">
             <li>
-              <strong className="text-text-primary">Le corps des mails n&apos;est jamais lu pour la classification.</strong>{" "}
-              Le moteur ne se base que sur des signaux structurés (en-têtes, domaine, motifs connus) — jamais sur le
-              contenu du message. Ça évite qu&apos;un mail malveillant puisse manipuler le classement en y insérant des
-              instructions.
+              <strong className="text-text-primary">Le corps complet des mails n&apos;est jamais lu pour la classification.</strong>{" "}
+              Le moteur se base sur des signaux structurés (en-têtes, domaine, SPF/DKIM/DMARC, motifs connus), le sujet
+              et l&apos;aperçu court fourni par Gmail/Outlook — le filtre qui apprend de tes corrections les compte comme
+              des mots, il ne les interprète jamais comme des instructions. Ce qu&apos;il apprend reste dans la base
+              locale.
             </li>
             <li>
               <strong className="text-text-primary">Rien n&apos;est envoyé à un tiers.</strong> Aucune télémétrie,

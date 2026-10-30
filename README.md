@@ -32,7 +32,7 @@ A local, privacy-first mail-triage dashboard for Gmail and Outlook/Microsoft 365
 
 MailGuard connects to your own Gmail and Outlook accounts via OAuth (you create the app registrations) and runs entirely on your machine. It:
 
-- **Classifies mail** into LEGITIMATE, NEWSLETTER, SPAM, or PHISHING using only structured signals (headers, sender domain, SPF/DKIM/DMARC, subject keywords) — **email body is never analyzed during sync**, preventing prompt-injection-style attacks from malicious emails.
+- **Classifies mail** into LEGITIMATE, NEWSLETTER, SPAM, or PHISHING using structured signals (headers, sender domain, SPF/DKIM/DMARC, subject keywords) plus a local Bayesian filter that learns from your corrections over the subject and the provider's short preview snippet — **the full email body is never analyzed during sync**.
 - **Quarantines suspicious mail** to your provider's Trash (always recoverable, never permanently deleted).
 - **Archives newsletters** out of your inbox to a dedicated folder.
 - **Audits inbox rules** for auto-forwarding and other persistence vectors.
@@ -163,7 +163,7 @@ src/
 **Data flow:**
 1. User connects a mailbox via OAuth → tokens encrypted and stored in SQLite.
 2. On sync, MailGuard fetches message headers and metadata from Gmail/Graph APIs.
-3. Classification engine scores each message using structured signals (no body content).
+3. Classification engine scores each message using structured signals and the local learner (subject + snippet, never the full body).
 4. UI displays messages grouped by verdict (LEGITIMATE/NEWSLETTER/SPAM/PHISHING).
 5. User actions (quarantine, archive, organize) are applied directly to the provider's servers.
 
