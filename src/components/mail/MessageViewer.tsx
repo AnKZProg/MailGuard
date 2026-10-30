@@ -7,7 +7,7 @@ import { MessageBody } from "./MessageBody";
 import { VerdictCorrection } from "./VerdictCorrection";
 import { quarantineNow, trashNow, allowSender, blockSender } from "@/app/actions/message-actions";
 
-export async function MessageViewer({ messageId }: { messageId: string }) {
+export async function MessageViewer({ messageId, closeHref }: { messageId: string; closeHref: string }) {
   const message = await db.message.findUnique({
     where: { id: messageId },
     include: { account: true, signals: true },
@@ -25,7 +25,7 @@ export async function MessageViewer({ messageId }: { messageId: string }) {
     <aside className="animate-slide-in-right flex w-[420px] shrink-0 flex-col border-l border-border-subtle bg-surface-0">
       <header className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
         <VerdictBadge verdict={message.verdict} />
-        <Link href="/" className="flex h-6 w-6 items-center justify-center rounded text-text-tertiary hover:bg-surface-2">
+        <Link href={closeHref} aria-label="Fermer" className="flex h-6 w-6 items-center justify-center rounded text-text-tertiary hover:bg-surface-2">
           <X className="h-4 w-4" strokeWidth={1.75} />
         </Link>
       </header>

@@ -8,9 +8,10 @@ import type { Message, Verdict } from "@prisma/client";
 
 type Props = {
   message: Message & { account: { emailAddress: string; colorToken: string } };
+  openHref: string;
 };
 
-export function MessageRow({ message }: Props) {
+export function MessageRow({ message, openHref }: Props) {
   return (
     <div
       className={cn(
@@ -25,7 +26,7 @@ export function MessageRow({ message }: Props) {
         aria-hidden
       />
 
-      <Link href={`/?open=${message.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+      <Link href={openHref} className="flex min-w-0 flex-1 items-center gap-3">
         <span
           className={cn(
             "w-44 shrink-0 truncate text-[13px]",

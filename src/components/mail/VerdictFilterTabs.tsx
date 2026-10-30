@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import type { Verdict } from "@prisma/client";
+import { inboxHref, type InboxQuery } from "@/lib/queries/inbox-url";
 
 const TABS: { label: string; verdict: Verdict | undefined }[] = [
   { label: "Tous", verdict: undefined },
@@ -10,7 +11,8 @@ const TABS: { label: string; verdict: Verdict | undefined }[] = [
   { label: "Phishing", verdict: "PHISHING" },
 ];
 
-export function VerdictFilterTabs({ active }: { active?: Verdict }) {
+export function VerdictFilterTabs({ query }: { query: InboxQuery }) {
+  const active = query.verdict;
   return (
     <nav className="flex items-center gap-1">
       {TABS.map(({ label, verdict }) => {
@@ -18,7 +20,7 @@ export function VerdictFilterTabs({ active }: { active?: Verdict }) {
         return (
           <Link
             key={label}
-            href={{ pathname: "/", query: verdict ? { verdict } : {} }}
+            href={inboxHref({ ...query, verdict })}
             className={cn(
               "flex h-7 items-center rounded-md px-2.5 text-[12px] font-medium transition-colors",
               isActive ? "bg-accent-soft text-accent-strong" : "text-text-secondary hover:bg-surface-2",

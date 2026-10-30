@@ -7,16 +7,25 @@ import { MessageViewer } from "@/components/mail/MessageViewer";
 import { VerdictFilterTabs } from "@/components/mail/VerdictFilterTabs";
 import { UnsubscribeAllButton } from "@/components/mail/UnsubscribeAllButton";
 import { TrashAllNewslettersButton } from "@/components/mail/TrashAllNewslettersButton";
-import type { Verdict } from "@prisma/client";
+import { InboxFilters } from "@/components/mail/InboxFilters";
+import { inboxHref, parseInboxQuery } from "@/lib/queries/inbox-url";
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ open?: string; verdict?: Verdict; cursor?: string }>;
+  searchParams: Promise<{ open?: string; verdict?: string; account?: string; q?: string; cursor?: string }>;
 }) {
-  const { open, verdict, cursor } = await searchParams;
-  const accountCount = await db.account.count();
-  const { messages, nextCursor } = accountCount > 0 ? await listMessages({ verdict, cursor }) : { messages: [], nextCursor: null };
+  const params = await searchParams;
+  const { open, cursor } = params;
+  const query = parseInboxQuery(params);
+  const { verdict } = query;
+  const accounts = await db.account.findMany({ select: { id: true, emailAddress: true }, orderBy: { emailAddress: "asc" } });
+  const { messages, nextCursor } =
+    accounts.length > 0
+      ? await listMessages({ verdict, accountId: query.account, search: query.q, cursor })
+      : { messages: [], nextCursor: null };
+  const accountCount = accounts.length;
+  const isFiltered = Boolean(query.q || query.account);
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -24,14 +33,17 @@ export default async function DashboardPage({
         <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border-subtle px-6">
           <div className="flex items-center gap-4">
             <h1 className="text-[13px] font-semibold text-text-primary">Boîte unifiée</h1>
-            <VerdictFilterTabs active={verdict} />
+            <VerdictFilterTabs query={query} />
           </div>
-          {verdict === "NEWSLETTER" && (
-            <div className="flex items-center gap-2">
-              <UnsubscribeAllButton />
-              <TrashAllNewslettersButton />
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {accountCount > 0 && <InboxFilters query={query} accounts={accounts} />}
+            {verdict === "NEWSLETTER" && !isFiltered && (
+              <>
+                <UnsubscribeAllButton />
+                <TrashAllNewslettersButton />
+              </>
+            )}
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto">
@@ -47,7 +59,15 @@ export default async function DashboardPage({
             </div>
           ) : messages.length === 0 ? (
             <div className="flex h-full items-center justify-center p-6">
-              {verdict === "SPAM" || verdict === "PHISHING" ? (
+              {isFiltered ? (
+                <EmptyState
+                  icon={Inbox}
+                  title="Aucun résultat"
+                  description="Aucun mail ne correspond à cette recherche ou à ce compte dans la boîte unifiée."
+                  actionHref={inboxHref({ verdict })}
+                  actionLabel="Effacer les filtres"
+                />
+              ) : verdict === "SPAM" || verdict === "PHISHING" ? (
                 <EmptyState
                   icon={Inbox}
                   title={verdict === "SPAM" ? "Aucun spam en boîte de réception" : "Aucun phishing en boîte de réception"}
@@ -64,12 +84,12 @@ export default async function DashboardPage({
               )}
             </div>
           ) : (
-            <MessageList messages={messages} nextCursor={nextCursor} filters={{ verdict }} />
+            <MessageList messages={messages} nextCursor={nextCursor} query={query} />
           )}
         </div>
       </div>
 
-      {open && <MessageViewer messageId={open} />}
+      {open && <MessageViewer messageId={open} closeHref={inboxHref(query)} />}
     </div>
   );
 }
