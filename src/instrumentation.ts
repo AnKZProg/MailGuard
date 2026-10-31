@@ -3,6 +3,8 @@ export async function register() {
   // file also runs (once) under the Edge runtime when one is configured,
   // where a Node-only module like better-sqlite3 can't load.
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  // End-to-end tests run against fake accounts: no background sync touching their fixtures mid-test.
+  if (process.env.MAILGUARD_DISABLE_AUTO_SYNC === "1") return;
   const { startServerAutoSync } = await import("@/lib/sync/server-auto-sync");
   startServerAutoSync();
 }
