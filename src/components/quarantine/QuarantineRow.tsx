@@ -23,9 +23,9 @@ export function QuarantineRow({ item, now }: Props) {
   const { message } = item;
   const purge = purgeLabel(item.purgeAfter, now);
   return (
-    <div className="group flex items-center gap-3 border-b border-border-subtle px-4 py-2.5 transition-colors hover:bg-surface-1">
+    <div className="group flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border-subtle px-4 py-2.5 transition-colors hover:bg-surface-1">
       <SenderAvatar name={message.fromDisplayName} address={message.fromAddress} />
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-56">
         <div className="flex items-center gap-2">
           <p className="truncate text-[13px] font-medium text-text-primary">{message.subject || "(sans objet)"}</p>
           <VerdictBadge verdict={message.verdict as Verdict | null} />
@@ -38,24 +38,26 @@ export function QuarantineRow({ item, now }: Props) {
           reçu {formatDateTime(message.receivedAt)}
         </p>
       </div>
-      <span
-        className={
-          purge.urgent
-            ? "shrink-0 text-[12px] font-medium tabular-nums text-verdict-phishing"
-            : "shrink-0 text-[12px] tabular-nums text-text-tertiary"
-        }
-      >
-        {purge.text}
-      </span>
-      <form action={restoreNow.bind(null, item.messageId)}>
-        <button
-          type="submit"
-          className="flex h-7 items-center gap-1.5 rounded-md border border-border-default bg-surface-0 px-2.5 text-[12px] font-medium text-text-primary transition-colors hover:bg-surface-2"
+      <div className="ml-auto flex items-center gap-3">
+        <span
+          className={
+            purge.urgent
+              ? "shrink-0 text-[12px] font-medium tabular-nums text-verdict-phishing"
+              : "shrink-0 text-[12px] tabular-nums text-text-tertiary"
+          }
         >
-          <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.75} />
-          Restaurer
-        </button>
-      </form>
+          {purge.text}
+        </span>
+        <form action={restoreNow.bind(null, item.messageId)}>
+          <button
+            type="submit"
+            className="flex h-7 items-center gap-1.5 rounded-md border border-border-default bg-surface-0 px-2.5 text-[12px] font-medium text-text-primary transition-colors hover:bg-surface-2"
+          >
+            <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.75} />
+            Restaurer
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

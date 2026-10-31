@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, Trash2 } from "lucide-react";
+import { Archive, MailCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
 import { quarantineNow, restoreNow, trashNow } from "@/app/actions/message-actions";
@@ -153,83 +153,95 @@ export function InboxList({ rows, openId, closeHref, loadMoreHref }: Props) {
 
   return (
     <>
-      <div role="listbox" aria-label="Messages" className="flex flex-col pb-6">
-        {visible.map((row, i) => {
-          const showGroup = i === 0 || visible[i - 1].group !== row.group;
-          const isOpen = row.id === openId;
-          const isCursor = row.id === cursorId;
-          return (
-            <div key={row.id}>
-              {showGroup && (
-                <div className="sticky top-0 z-10 border-b border-border-subtle bg-surface-0/90 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary backdrop-blur">
-                  {row.group}
-                </div>
-              )}
-              <div data-row-id={row.id} className="group relative">
-                <Link
-                  href={row.href}
-                  role="option"
-                  aria-selected={isOpen}
-                  onClick={() => setCursorId(row.id)}
-                  className={cn(
-                    "flex gap-3 border-b border-border-subtle py-2.5 pl-2 pr-4 transition-colors",
-                    isOpen ? "bg-row-selected shadow-[inset_2px_0_0_var(--accent)]" : "hover:bg-surface-1",
-                    isCursor && !isOpen && "bg-surface-1 shadow-[inset_2px_0_0_var(--border-default)]",
-                  )}
-                >
-                  <span
-                    className={cn("mt-[13px] h-1.5 w-1.5 shrink-0 rounded-full", row.isRead ? "bg-transparent" : "bg-unread")}
-                    aria-label={row.isRead ? undefined : "Non lu"}
-                  />
-                  <SenderAvatar name={row.senderName} address={row.senderAddress} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "truncate text-[13px]",
-                          row.isRead ? "text-text-secondary" : "font-semibold text-text-primary",
-                        )}
-                      >
-                        {row.senderName || row.senderAddress}
-                      </span>
-                      <span
-                        className="h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: row.accountColorVar }}
-                        title={row.accountEmail}
-                      />
-                      <time
-                        title={row.dateTitle}
-                        className={cn(
-                          "ml-auto shrink-0 text-[11.5px] tabular-nums group-hover:invisible",
-                          row.isRead ? "text-text-tertiary" : "font-medium text-text-secondary",
-                        )}
-                      >
-                        {row.dateLabel}
-                      </time>
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2">
-                      <p className="min-w-0 flex-1 truncate text-[12.5px] leading-5">
-                        <span className={row.isRead ? "text-text-secondary" : "font-medium text-text-primary"}>
-                          {row.subject || "(sans objet)"}
-                        </span>
-                        {row.snippet && <span className="text-text-tertiary"> — {row.snippet}</span>}
-                      </p>
-                      {row.verdict && row.verdict !== "LEGITIMATE" && <VerdictBadge verdict={row.verdict} />}
-                    </div>
+      <div className="flex flex-col pb-6">
+        <div role="listbox" aria-label="Messages" className="flex flex-col">
+          {visible.map((row, i) => {
+            const showGroup = i === 0 || visible[i - 1].group !== row.group;
+            const isOpen = row.id === openId;
+            const isCursor = row.id === cursorId;
+            return (
+              <div key={row.id}>
+                {showGroup && (
+                  <div className="sticky top-0 z-10 border-b border-border-subtle bg-surface-0/90 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary backdrop-blur">
+                    {row.group}
                   </div>
-                </Link>
-                <div className="absolute right-3 top-1.5 hidden items-center gap-0.5 rounded-md border border-border-subtle bg-surface-0 p-0.5 shadow-[var(--elevation-sm)] group-hover:flex">
-                  <RowAction label="Quarantaine (e)" onClick={() => quarantine(row)} tone="newsletter">
-                    <Archive className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  </RowAction>
-                  <RowAction label="Corbeille (#)" onClick={() => trash(row)} tone="phishing">
-                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  </RowAction>
+                )}
+                <div data-row-id={row.id} data-cursor={isCursor || undefined} className="group relative">
+                  <Link
+                    href={row.href}
+                    role="option"
+                    aria-selected={isOpen}
+                    onClick={() => setCursorId(row.id)}
+                    className={cn(
+                      "flex gap-3 border-b border-border-subtle py-2.5 pl-2 pr-4 transition-colors",
+                      isOpen ? "bg-row-selected shadow-[inset_2px_0_0_var(--accent)]" : "hover:bg-surface-1",
+                      isCursor && !isOpen && "bg-surface-1 shadow-[inset_2px_0_0_var(--border-default)]",
+                    )}
+                  >
+                    <span
+                      className={cn("mt-[13px] h-1.5 w-1.5 shrink-0 rounded-full", row.isRead ? "bg-transparent" : "bg-unread")}
+                      aria-label={row.isRead ? undefined : "Non lu"}
+                    />
+                    <SenderAvatar name={row.senderName} address={row.senderAddress} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "truncate text-[13px]",
+                            row.isRead ? "text-text-secondary" : "font-semibold text-text-primary",
+                          )}
+                        >
+                          {row.senderName || row.senderAddress}
+                        </span>
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: row.accountColorVar }}
+                          title={row.accountEmail}
+                        />
+                        <time
+                          title={row.dateTitle}
+                          className={cn(
+                            "ml-auto shrink-0 text-[11.5px] tabular-nums group-hover:invisible",
+                            row.isRead ? "text-text-tertiary" : "font-medium text-text-secondary",
+                          )}
+                        >
+                          {row.dateLabel}
+                        </time>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <p className="min-w-0 flex-1 truncate text-[12.5px] leading-5">
+                          <span className={row.isRead ? "text-text-secondary" : "font-medium text-text-primary"}>
+                            {row.subject || "(sans objet)"}
+                          </span>
+                          {row.snippet && <span className="text-text-tertiary"> — {row.snippet}</span>}
+                        </p>
+                        {row.verdict && row.verdict !== "LEGITIMATE" && <VerdictBadge verdict={row.verdict} />}
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="absolute right-3 top-1.5 hidden items-center gap-0.5 rounded-md border border-border-subtle bg-surface-0 p-0.5 shadow-[var(--elevation-sm)] group-hover:flex">
+                    <RowAction label="Quarantaine (e)" onClick={() => quarantine(row)} tone="newsletter">
+                      <Archive className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    </RowAction>
+                    <RowAction label="Corbeille (#)" onClick={() => trash(row)} tone="phishing">
+                      <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    </RowAction>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        {/* Every row on this page was triaged from here: say so instead of leaving a blank pane. */}
+        {visible.length === 0 && (
+          <div role="status" className="flex flex-col items-center gap-2 px-6 py-16 text-center">
+            <MailCheck className="h-5 w-5 text-text-tertiary" strokeWidth={1.75} />
+            <p className="text-[13px] font-medium text-text-primary">Tout est trié sur cette page</p>
+            <p className="text-[12px] text-text-tertiary">
+              {loadMoreHref ? "Charge la suite pour continuer." : "Plus rien à traiter ici pour l'instant."}
+            </p>
+          </div>
+        )}
         {loadMoreHref && (
           <Link
             href={loadMoreHref}

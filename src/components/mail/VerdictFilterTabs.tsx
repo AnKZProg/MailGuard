@@ -19,7 +19,7 @@ type Props = {
 
 export function VerdictFilterTabs({ query, counts }: Props) {
   return (
-    <nav aria-label="Filtrer par verdict" className="flex items-center gap-0.5 overflow-x-auto">
+    <nav aria-label="Filtrer par verdict" className="flex items-center gap-0.5 overflow-x-auto [scrollbar-width:none]">
       {TABS.map(({ label, verdict }) => {
         const isActive = query.verdict === verdict;
         const count = counts?.[verdict ?? "ALL"];

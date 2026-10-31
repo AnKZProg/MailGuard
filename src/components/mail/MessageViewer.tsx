@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { X, Archive, Trash2, ShieldCheck, ShieldOff, ExternalLink, ChevronRight } from "lucide-react";
+import { ArrowLeft, X, Archive, Trash2, ShieldCheck, ShieldOff, ExternalLink, ChevronRight } from "lucide-react";
 import type { Provider } from "@prisma/client";
 import { db } from "@/lib/db";
 import { longMailDate } from "@/lib/format/mail-date";
@@ -41,33 +41,34 @@ export async function MessageViewer({ messageId, closeHref }: { messageId: strin
   return (
     <section aria-label="Lecture du message" className="animate-fade-in flex min-w-0 flex-1 flex-col overflow-hidden bg-surface-0">
       <div className="flex h-14 shrink-0 items-center gap-1 border-b border-border-subtle px-3">
-        <Link href={closeHref} aria-label="Fermer (Échap)" title="Fermer (Échap)" className={toolbarButton}>
-          <X className="h-4 w-4" strokeWidth={1.75} />
+        <Link href={closeHref} aria-label="Retour à la liste (Échap)" title="Retour à la liste (Échap)" className={toolbarButton}>
+          <ArrowLeft className="h-4 w-4 md:hidden" strokeWidth={1.75} />
+          <X className="hidden h-4 w-4 md:block" strokeWidth={1.75} />
         </Link>
         <span className="mx-1 h-5 w-px bg-border-subtle" aria-hidden />
         <form action={quarantineNow.bind(null, message.id)}>
-          <button type="submit" className={toolbarButton} title="Mettre en quarantaine (e)">
+          <button type="submit" className={toolbarButton} title="Mettre en quarantaine (e)" aria-label="Mettre en quarantaine">
             <Archive className="h-3.5 w-3.5" strokeWidth={1.75} />
-            Quarantaine
+            <span className="hidden sm:inline">Quarantaine</span>
           </button>
         </form>
         <form action={trashNow.bind(null, message.id)}>
-          <button type="submit" className={toolbarButton} title="Mettre à la corbeille (#)">
+          <button type="submit" className={toolbarButton} title="Mettre à la corbeille (#)" aria-label="Mettre à la corbeille">
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-            Corbeille
+            <span className="hidden sm:inline">Corbeille</span>
           </button>
         </form>
         <span className="mx-1 h-5 w-px bg-border-subtle" aria-hidden />
         <form action={allowSender.bind(null, message.id, senderScope)}>
-          <button type="submit" className={toolbarButton} title={`Toujours autoriser ${senderTarget}`}>
+          <button type="submit" className={toolbarButton} title={`Toujours autoriser ${senderTarget}`} aria-label={`Toujours autoriser ${senderTarget}`}>
             <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
-            Autoriser
+            <span className="hidden sm:inline">Autoriser</span>
           </button>
         </form>
         <form action={blockSender.bind(null, message.id, senderScope)}>
-          <button type="submit" className={toolbarButton} title={`Toujours bloquer ${senderTarget}`}>
+          <button type="submit" className={toolbarButton} title={`Toujours bloquer ${senderTarget}`} aria-label={`Toujours bloquer ${senderTarget}`}>
             <ShieldOff className="h-3.5 w-3.5" strokeWidth={1.75} />
-            Bloquer
+            <span className="hidden sm:inline">Bloquer</span>
           </button>
         </form>
         <a
@@ -76,6 +77,7 @@ export async function MessageViewer({ messageId, closeHref }: { messageId: strin
           rel="noopener noreferrer"
           className={`${toolbarButton} ml-auto`}
           title={`Ouvrir ce mail dans ${providerName}`}
+          aria-label={`Ouvrir ce mail dans ${providerName}`}
         >
           <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.75} />
           <span className="hidden xl:inline">Ouvrir dans {providerName}</span>
@@ -83,8 +85,8 @@ export async function MessageViewer({ messageId, closeHref }: { messageId: strin
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 pt-5">
-          <h2 className="text-[19px] font-semibold leading-snug tracking-tight text-text-primary">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-5 sm:px-6">
+          <h2 className="text-[17px] font-semibold sm:text-[19px] leading-snug tracking-tight text-text-primary">
             {message.subject || "(sans objet)"}
           </h2>
 
@@ -98,8 +100,10 @@ export async function MessageViewer({ messageId, closeHref }: { messageId: strin
                 {message.fromDisplayName && <span className="text-text-secondary">{message.fromAddress}</span>}
                 {message.fromDisplayName && " · "}à {message.account.emailAddress}
               </p>
+              {/* Phones: the long date would squeeze the sender name to a few letters — give it its own line. */}
+              <time className="block text-[12px] text-text-tertiary sm:hidden">{longMailDate(message.receivedAt)}</time>
             </div>
-            <time className="shrink-0 pt-0.5 text-[12px] text-text-tertiary">{longMailDate(message.receivedAt)}</time>
+            <time className="hidden shrink-0 pt-0.5 text-[12px] text-text-tertiary sm:block">{longMailDate(message.receivedAt)}</time>
           </div>
 
           <div className="flex flex-col gap-2 rounded-lg border border-border-subtle bg-surface-1 px-3 py-2.5">
@@ -124,7 +128,7 @@ export async function MessageViewer({ messageId, closeHref }: { messageId: strin
           </div>
         </div>
 
-        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-4">
+        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-4 sm:px-6">
           <div className="flex min-h-[420px] flex-1 flex-col overflow-hidden rounded-lg border border-border-subtle">
             <MessageBody key={message.id} messageId={message.id} />
           </div>

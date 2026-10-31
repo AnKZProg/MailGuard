@@ -55,8 +55,8 @@ export function Sidebar({ stats, theme }: Props) {
         </p>
         <ShadowModeQuickToggle enabled={stats.shadowMode} />
 
-        <div className="mt-1 flex items-center justify-between gap-2 border-t border-border-subtle px-1.5 pt-2">
-          <span className="flex items-center gap-1 text-[11px] text-text-tertiary" title="Palette de commandes (Ctrl+K)">
+        <div className="mt-1 flex items-center justify-end gap-2 border-t md:justify-between border-border-subtle px-1.5 pt-2">
+          <span className="hidden items-center gap-1 text-[11px] text-text-tertiary md:flex" title="Palette de commandes (Ctrl+K)">
             <kbd className="rounded border border-border-default bg-surface-2 px-1 py-0.5 font-mono text-[10px]">Ctrl</kbd>
             <kbd className="rounded border border-border-default bg-surface-2 px-1 py-0.5 font-mono text-[10px]">K</kbd>
           </span>

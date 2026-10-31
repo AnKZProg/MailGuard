@@ -25,7 +25,7 @@ export default async function QuarantinePage() {
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border-subtle px-6">
+      <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border-subtle px-4 py-3 sm:px-6">
         <div className="flex items-baseline gap-2">
           <h1 className="text-[14px] font-semibold tracking-tight text-text-primary">Quarantaine</h1>
           <span className="text-[12px] tabular-nums text-text-tertiary">
@@ -35,7 +35,7 @@ export default async function QuarantinePage() {
         <QuarantineBulkActions itemCount={items.length} />
       </header>
 
-      <p className="border-b border-border-subtle bg-surface-1 px-6 py-2 text-[12px] text-text-tertiary">
+      <p className="border-b border-border-subtle bg-surface-1 px-4 py-2 sm:px-6 text-[12px] text-text-tertiary">
         Rien n&apos;est supprimé définitivement : chaque mail reste récupérable tant qu&apos;il est ici.
       </p>
 

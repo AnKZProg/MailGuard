@@ -1,7 +1,7 @@
-import { X, RefreshCw, AlertTriangle } from "lucide-react";
+import { RefreshCw, AlertTriangle } from "lucide-react";
 import { ProviderMark } from "./ProviderMark";
 import { OrganizeBySenderButton } from "./OrganizeBySenderButton";
-import { disconnectAccount } from "@/app/accounts/actions";
+import { DisconnectButton } from "./DisconnectButton";
 import { formatDateTime } from "@/lib/format/mail-date";
 import { cn } from "@/lib/cn";
 
@@ -76,17 +76,7 @@ export function AccountRow({ id, provider, emailAddress, displayName, colorToken
 
       <div className="flex items-center gap-1">
         <OrganizeBySenderButton accountId={id} />
-        <form action={disconnectAccount}>
-          <input type="hidden" name="accountId" value={id} />
-          <button
-            type="submit"
-            title="Déconnecter ce compte"
-            aria-label={`Déconnecter ${emailAddress}`}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-verdict-phishing-soft hover:text-verdict-phishing"
-          >
-            <X className="h-3.5 w-3.5" strokeWidth={1.75} />
-          </button>
-        </form>
+        <DisconnectButton accountId={id} emailAddress={emailAddress} />
       </div>
     </div>
   );

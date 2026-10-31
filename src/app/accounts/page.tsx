@@ -23,7 +23,7 @@ export default async function AccountsPage({
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border-subtle px-6">
+      <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border-subtle px-4 py-3 sm:px-6">
         <div className="flex items-baseline gap-2">
           <h1 className="text-[14px] font-semibold tracking-tight text-text-primary">Comptes</h1>
           <span className="text-[12px] tabular-nums text-text-tertiary">
@@ -48,7 +48,7 @@ export default async function AccountsPage({
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6">
         <FlashBanner connected={connected} error={error} />
         {needsAttention > 0 && !connected && !error && (
           <p className="rounded-md border border-verdict-newsletter/30 bg-verdict-newsletter-soft px-3.5 py-2.5 text-[13px] text-verdict-newsletter">
@@ -127,8 +127,8 @@ export default async function AccountsPage({
 
 function MaintenanceRow({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3">
-      <div className="min-w-0">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
+      <div className="min-w-0 flex-1 basis-64">
         <p className="text-[13px] font-medium text-text-primary">{title}</p>
         <p className="mt-0.5 text-[12px] leading-relaxed text-text-secondary">{description}</p>
       </div>
