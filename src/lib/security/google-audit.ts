@@ -1,12 +1,23 @@
 import type { RawFinding } from "@/lib/security/findings";
+import { assessAutoReply, htmlToText } from "@/lib/security/auto-reply";
 import {
   getAutoForwarding,
   listFilters,
   getImapSettings,
   getPopSettings,
+  getVacationSettings,
+  listSendAs,
+  type SendAs,
+  type VacationSettings,
 } from "@/lib/providers/google/gmail-settings-client";
 
-export const GOOGLE_AUDIT_KINDS = ["AUTO_FORWARD", "INBOX_RULE_FORWARD", "IMAP_POP_ENABLED"] as const;
+export const GOOGLE_AUDIT_KINDS = [
+  "AUTO_FORWARD",
+  "INBOX_RULE_FORWARD",
+  "IMAP_POP_ENABLED",
+  "ALT_ADDRESS",
+  "VACATION_SUSPICIOUS",
+] as const;
 
 /**
  * Classic account-takeover persistence: an attacker with brief access sets up
@@ -14,8 +25,12 @@ export const GOOGLE_AUDIT_KINDS = ["AUTO_FORWARD", "INBOX_RULE_FORWARD", "IMAP_P
  * We flag every active forward, whether Gmail's account-level auto-forward or a
  * filter with a forward action — there's no way to tell "the user did this
  * intentionally" apart from "an attacker did" without asking, so both surface.
+ *
+ * Delegated access ("Grant access to your account") can't be checked: Gmail's
+ * delegates API only answers service accounts with Workspace domain-wide
+ * authority, never a personal account's own OAuth token.
  */
-export async function auditGoogleAccount(accessToken: string): Promise<RawFinding[]> {
+export async function auditGoogleAccount(accessToken: string, ownAddress: string): Promise<RawFinding[]> {
   const findings: RawFinding[] = [];
 
   const autoForwarding = await getAutoForwarding(accessToken);
@@ -52,5 +67,56 @@ export async function auditGoogleAccount(accessToken: string): Promise<RawFindin
     });
   }
 
+  const sendAs = await listSendAs(accessToken);
+  findings.push(...sendAsFindings(sendAs, ownAddress));
+
+  const vacation = await getVacationSettings(accessToken);
+  const vacationFinding = vacation ? googleVacationFinding(vacation, [ownAddress, ...sendAs.map((s) => s.sendAsEmail)]) : null;
+  if (vacationFinding) findings.push(vacationFinding);
+
   return findings;
+}
+
+/**
+ * A "reply-to" on the main address quietly sends every answer to someone else —
+ * the correspondent sees the real sender and never notices. Extra send-as
+ * addresses are listed so the user can confirm they're theirs.
+ */
+export function sendAsFindings(entries: SendAs[], ownAddress: string): RawFinding[] {
+  const own = ownAddress.toLowerCase();
+  const findings: RawFinding[] = [];
+  for (const entry of entries) {
+    const replyTo = entry.replyToAddress?.trim().toLowerCase();
+    if (replyTo && replyTo !== entry.sendAsEmail.toLowerCase() && replyTo !== own) {
+      findings.push({
+        kind: "ALT_ADDRESS",
+        severity: entry.isPrimary ? "CRITICAL" : "WARNING",
+        externalTarget: replyTo,
+        rawConfig: { reason: "reply_to", sendAsEmail: entry.sendAsEmail, replyToAddress: entry.replyToAddress },
+      });
+    }
+    if (!entry.isPrimary && entry.sendAsEmail.toLowerCase() !== own) {
+      findings.push({
+        kind: "ALT_ADDRESS",
+        severity: "INFO",
+        externalTarget: entry.sendAsEmail,
+        rawConfig: { reason: "send_as", sendAsEmail: entry.sendAsEmail, verificationStatus: entry.verificationStatus },
+      });
+    }
+  }
+  return findings;
+}
+
+export function googleVacationFinding(vacation: VacationSettings, ownAddresses: string[], now = Date.now()): RawFinding | null {
+  if (!vacation.enableAutoReply) return null;
+  if (vacation.endTime && Number(vacation.endTime) < now) return null;
+  const body = vacation.responseBodyPlainText ?? htmlToText(vacation.responseBodyHtml ?? "");
+  const assessment = assessAutoReply(`${vacation.responseSubject ?? ""} ${body}`, ownAddresses);
+  if (!assessment) return null;
+  return {
+    kind: "VACATION_SUSPICIOUS",
+    severity: "WARNING",
+    externalTarget: assessment.target,
+    rawConfig: { reasons: assessment.reasons, responseSubject: vacation.responseSubject },
+  };
 }
