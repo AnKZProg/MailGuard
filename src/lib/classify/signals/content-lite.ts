@@ -1,10 +1,13 @@
 import type { MessageFeatures } from "@/lib/classify/features";
 import type { Signal } from "@/lib/classify/signal";
 import {
+  ANTIVIRUS_BRANDS,
+  BANK_DETAILS_CHANGE_KEYWORDS,
   DELIVERY_FEE_KEYWORDS,
   PHISHING_SUBJECT_KEYWORDS,
   ROMANCE_SCAM_KEYWORDS,
   SPAM_SUBJECT_KEYWORDS,
+  SUBSCRIPTION_LAPSE_KEYWORDS,
 } from "@/lib/classify/config";
 
 /**
@@ -52,9 +55,41 @@ export function contentLiteSignals(features: MessageFeatures): Signal[] {
         detail: `Réclame des « ${fee} »`,
       });
     }
+
+    const bankChange = firstHit(features, BANK_DETAILS_CHANGE_KEYWORDS);
+    if (bankChange) signals.push(bankDetailsChangeSignal(features, bankChange));
+  }
+
+  const antivirus = fakeAntivirusRenewal(features);
+  if (antivirus) {
+    signals.push({
+      ruleId: "content.fake_antivirus_renewal",
+      category: "phishing",
+      weight: 0.6,
+      detail: `Annonce la fin d'une protection ${antivirus} sans venir de ${antivirus}`,
+    });
   }
 
   return signals;
+}
+
+/**
+ * Payment diversion is the costliest scam there is, so even a known sender gets
+ * a visible flag — their mailbox may be the one that was compromised.
+ */
+function bankDetailsChangeSignal(features: MessageFeatures, hit: string): Signal {
+  return features.isFirstContact
+    ? { ruleId: "content.bank_details_change_first_contact", category: "phishing", weight: 0.6, detail: `Expéditeur inconnu qui annonce un changement de « ${hit} » (détournement de paiement)` }
+    : { ruleId: "content.bank_details_change", category: "phishing", weight: 0.3, detail: `Annonce un changement de « ${hit} » : vérifie par téléphone avant tout virement` };
+}
+
+function fakeAntivirusRenewal(features: MessageFeatures): string | undefined {
+  const text = `${(features.fromDisplayName ?? "").toLowerCase()} ${features.subjectLower} ${features.snippetLower}`;
+  const vendor = ANTIVIRUS_BRANDS.find(({ brand }) => new RegExp(`\\b${brand}\\b`).test(text));
+  if (!vendor) return undefined;
+  const domain = features.fromDomain.toLowerCase();
+  if (vendor.domains.some((d) => domain === d || domain.endsWith(`.${d}`))) return undefined;
+  return SUBSCRIPTION_LAPSE_KEYWORDS.some((k) => text.includes(k)) ? vendor.brand : undefined;
 }
 
 function firstHit(features: MessageFeatures, keywords: readonly string[]): string | undefined {

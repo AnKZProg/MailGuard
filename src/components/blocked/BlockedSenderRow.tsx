@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { Unlock, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { unblockSenderAction } from "@/app/blocked/actions";
 import type { BlockedSenderPolicy } from "@/lib/queries/blocked-senders";
 
@@ -15,8 +16,18 @@ export function BlockedSenderRow({ policy, onUnblocked }: Props) {
 
   const handleUnblock = () => {
     startTransition(async () => {
-      await unblockSenderAction(policy.id);
-      onUnblocked(policy.id);
+      try {
+        const { providerRuleRemoved } = await unblockSenderAction(policy.id);
+        onUnblocked(policy.id);
+        // The local block is gone either way; a provider filter left behind would keep hiding this sender's mail.
+        if (providerRuleRemoved || !policy.account) toast.success(`${policy.pattern} débloqué`);
+        else
+          toast.warning(`${policy.pattern} débloqué dans MailGuard`, {
+            description: `Le filtre côté ${policy.account.emailAddress} n'a pas pu être retiré : supprime-le à la main dans les réglages de la boîte.`,
+          });
+      } catch {
+        toast.error(`Impossible de débloquer ${policy.pattern}.`);
+      }
     });
   };
 

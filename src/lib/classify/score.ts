@@ -84,11 +84,20 @@ const LEARNED_MIN_PROBABILITY = 0.97;
 const LEARNED_MIN_PROBABILITY_TO_CLEAR_JUNK = 0.995;
 /** A strong phishing verdict is never undone by the learner — use "Autoriser" for that. */
 const PHISHING_SCORE_LEARNER_CANNOT_CLEAR = 0.8;
+/**
+ * The learner only sees words. Measured on the real mailbox, 13 of the 14 junk
+ * verdicts it had cleared were mail Gmail itself had filed as spam (fake Norton
+ * renewals, a rent bank-details fraud…): rare scam tokens look "legitimate" to a
+ * model trained on 240 kept mails vs. thousands of spam. The provider's own spam
+ * verdict is outside evidence the learner must not overrule.
+ */
+const EVIDENCE_LEARNER_CANNOT_CLEAR = new Set(["provider.spam_flag"]);
 
 function learnerMayOverride(rule: ClassificationResult, learned: LearnedPrediction): boolean {
   const ruleJunk = rule.verdict === "SPAM" || rule.verdict === "PHISHING";
   const learnedJunk = learned.verdict === "SPAM" || learned.verdict === "PHISHING";
   if (rule.verdict === "PHISHING" && rule.score >= PHISHING_SCORE_LEARNER_CANNOT_CLEAR && !learnedJunk) return false;
+  if (ruleJunk && !learnedJunk && rule.signals.some((s) => EVIDENCE_LEARNER_CANNOT_CLEAR.has(s.ruleId))) return false;
   const needed = ruleJunk && !learnedJunk ? LEARNED_MIN_PROBABILITY_TO_CLEAR_JUNK : LEARNED_MIN_PROBABILITY;
   return learned.probability >= needed;
 }
