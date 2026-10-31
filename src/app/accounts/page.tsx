@@ -8,6 +8,10 @@ import { ShadowModeToggle } from "@/components/accounts/ShadowModeToggle";
 import { FileNewMailButton } from "@/components/accounts/FileNewMailButton";
 import { OrganizeAllBySenderButton } from "@/components/accounts/OrganizeAllBySenderButton";
 import { TrashAllJunkButton } from "@/components/accounts/TrashAllJunkButton";
+import { BackupNowButton } from "@/components/accounts/BackupNowButton";
+import { currentBackupStatus } from "@/lib/backup/run-backup";
+import { BACKUPS_KEPT } from "@/lib/backup/db-backup";
+import { formatDateTime } from "@/lib/format/mail-date";
 
 export default async function AccountsPage({
   searchParams,
@@ -15,9 +19,10 @@ export default async function AccountsPage({
   searchParams: Promise<{ connected?: string; error?: string }>;
 }) {
   const { connected, error } = await searchParams;
-  const [accounts, shadowMode] = await Promise.all([
+  const [accounts, shadowMode, backup] = await Promise.all([
     db.account.findMany({ orderBy: { createdAt: "asc" } }),
     isShadowModeEnabled(),
+    currentBackupStatus(),
   ]);
   const needsAttention = accounts.filter((a) => a.status !== "ACTIVE").length;
 
@@ -117,6 +122,16 @@ export default async function AccountsPage({
               description="Envoie à la corbeille tout ce qui est classé Spam ou Phishing mais reste en boîte de réception. Récupérable."
             >
               <TrashAllJunkButton />
+            </MaintenanceRow>
+            <MaintenanceRow
+              title="Sauvegarde de la base"
+              description={
+                backup.latest
+                  ? `Dernière le ${formatDateTime(backup.latest.at)} · ${backup.count} copie${backup.count > 1 ? "s" : ""} gardée${backup.count > 1 ? "s" : ""} (les ${BACKUPS_KEPT} derniers jours) dans data/backups. Une copie est faite automatiquement chaque jour.`
+                  : "Aucune sauvegarde pour l'instant. Une copie est faite automatiquement chaque jour dans data/backups."
+              }
+            >
+              <BackupNowButton />
             </MaintenanceRow>
           </div>
         </section>
