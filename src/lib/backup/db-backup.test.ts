@@ -65,6 +65,20 @@ describe("backupDatabase on a real SQLite file", () => {
     expect(status.latest?.name).toBe("mailguard-2026-10-10.db");
   });
 
+  it("never leaves a half-written file behind as today's backup", async () => {
+    const now = new Date(2026, 9, 31);
+    const crashMidCopy = async (sql: string) => {
+      writeFileSync(sql.slice(sql.indexOf("'") + 1, sql.lastIndexOf("'")), "half a database");
+      throw new Error("disk full");
+    };
+    await expect(backupDatabase(crashMidCopy, dbFile, { now })).rejects.toThrow("disk full");
+    expect(readdirSync(path.join(dir, "backups"))).not.toContain(backupFileName(now));
+
+    const retry = await backupDatabase(execute, dbFile, { now });
+    expect(retry.created).toBe(true);
+    expect(readdirSync(path.join(dir, "backups"))).toEqual([backupFileName(now)]);
+  });
+
   it("reports no backup before the first one", async () => {
     expect(await backupStatus(dbFile)).toMatchObject({ latest: null, count: 0 });
   });

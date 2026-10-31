@@ -40,12 +40,17 @@ describe("htmlToText", () => {
 
 describe("sendAsFindings", () => {
   it("is quiet for a lone primary address", () => {
-    expect(sendAsFindings([{ sendAsEmail: ME, isPrimary: true }], ME)).toEqual([]);
+    expect(sendAsFindings([{ sendAsEmail: ME, isPrimary: true }], [ME])).toEqual([]);
   });
 
   it("flags a reply-to on the primary address as critical", () => {
-    const [finding] = sendAsFindings([{ sendAsEmail: ME, isPrimary: true, replyToAddress: "Thief@evil.example" }], ME);
+    const [finding] = sendAsFindings([{ sendAsEmail: ME, isPrimary: true, replyToAddress: "Thief@evil.example" }], [ME]);
     expect(finding).toMatchObject({ kind: "ALT_ADDRESS", severity: "CRITICAL", externalTarget: "thief@evil.example" });
+  });
+
+  it("trusts replies routed to another mailbox connected to MailGuard", () => {
+    const entries = [{ sendAsEmail: ME, isPrimary: true, replyToAddress: "Me.Pro@outlook.example" }];
+    expect(sendAsFindings(entries, [ME, "me.pro@outlook.example"])).toEqual([]);
   });
 
   it("lists an extra send-as address for confirmation", () => {
@@ -54,7 +59,7 @@ describe("sendAsFindings", () => {
         { sendAsEmail: ME, isPrimary: true },
         { sendAsEmail: "alias@work.example", verificationStatus: "accepted" },
       ],
-      ME,
+      [ME],
     );
     expect(findings).toEqual([expect.objectContaining({ severity: "INFO", externalTarget: "alias@work.example" })]);
   });
@@ -82,13 +87,13 @@ describe("microsoftAutoReplyFinding", () => {
   const base = { externalReplyMessage: "<p>Virement à faire sur le nouveau compte</p>" };
 
   it("flags an always-on reply with payment talk", () => {
-    expect(microsoftAutoReplyFinding({ ...base, status: "alwaysEnabled" }, ME, NOW)?.externalTarget).toBe("virement");
+    expect(microsoftAutoReplyFinding({ ...base, status: "alwaysEnabled" }, [ME], NOW)?.externalTarget).toBe("virement");
   });
 
   it("ignores disabled and finished scheduled replies (Graph's 7-digit fractions included)", () => {
-    expect(microsoftAutoReplyFinding({ ...base, status: "disabled" }, ME, NOW)).toBeNull();
+    expect(microsoftAutoReplyFinding({ ...base, status: "disabled" }, [ME], NOW)).toBeNull();
     const ended = { dateTime: "2026-10-30T08:00:00.0000000", timeZone: "UTC" };
-    expect(microsoftAutoReplyFinding({ ...base, status: "scheduled", scheduledEndDateTime: ended }, ME, NOW)).toBeNull();
+    expect(microsoftAutoReplyFinding({ ...base, status: "scheduled", scheduledEndDateTime: ended }, [ME], NOW)).toBeNull();
   });
 });
 
