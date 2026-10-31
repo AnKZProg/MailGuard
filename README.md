@@ -9,22 +9,30 @@ A local, privacy-first mail-triage dashboard for Gmail and Outlook/Microsoft 365
 
 ## Screenshots
 
-*All screenshots below use fictional demo data — no real mailbox content.*
+*Captured on a real mailbox (5,981 mails, 13 accounts). Personal details — account addresses, correspondents' names and messages, one-time codes — were replaced before capture; brands, scams and counts are real.*
 
 ![Unified inbox](docs/screenshots/unified-inbox.png)
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/quarantine.png" alt="Quarantine view" /><br/><sub>Quarantine — suspicious mail, always recoverable</sub></td>
-<td width="50%"><img src="docs/screenshots/security-audit.png" alt="Security audit" /><br/><sub>Security audit — suspicious forwarding rules</sub></td>
+<td width="50%"><img src="docs/screenshots/quarantine.png" alt="Quarantine view" /><br/><sub>Quarantine — suspicious mail, always recoverable, with its purge date</sub></td>
+<td width="50%"><img src="docs/screenshots/security-audit.png" alt="Security audit" /><br/><sub>Security audit — forwarding, reply-to and auto-reply checks, and what can't be checked</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/screenshots/accounts.png" alt="Accounts page" /><br/><sub>Multi-account management</sub></td>
+<td width="50%"><img src="docs/screenshots/accounts.png" alt="Accounts page" /><br/><sub>Multi-account management, maintenance and daily backups</sub></td>
 <td width="50%"><img src="docs/screenshots/newsletter-filter.png" alt="Newsletter filter view" /><br/><sub>Newsletters — bulk unsubscribe/delete</sub></td>
 </tr>
 <tr>
 <td width="50%"><img src="docs/screenshots/blocked.png" alt="Blocked senders view" /><br/><sub>Blocked senders — searchable, one click to unblock</sub></td>
-<td width="50%"></td>
+<td width="50%"><img src="docs/screenshots/dark-mode.png" alt="Dark mode" /><br/><sub>Dark mode (system, light or dark)</sub></td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="33%"><img src="docs/screenshots/mobile-inbox.png" alt="Inbox on a phone" /><br/><sub>Phone layout</sub></td>
+<td width="33%"><img src="docs/screenshots/mobile-message.png" alt="Message on a phone" /><br/><sub>Full-screen reading with a back arrow</sub></td>
+<td width="33%"><img src="docs/screenshots/mobile-menu.png" alt="Navigation drawer on a phone" /><br/><sub>Navigation drawer</sub></td>
 </tr>
 </table>
 
