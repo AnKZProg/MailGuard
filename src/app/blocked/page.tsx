@@ -16,18 +16,18 @@ export default async function BlockedPage({ searchParams }: Props) {
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
-      <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border-subtle px-6">
-        <h1 className="text-[13px] font-semibold text-text-primary">Bloqués</h1>
+      <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-subtle px-4 py-3 sm:px-6">
+        <h1 className="text-[14px] font-semibold tracking-tight text-text-primary">Bloqués</h1>
         {(policies.length > 0 || hasSearch) && (
-          <form action="/blocked" className="ml-auto flex items-center">
-            <div className="relative">
+          <form action="/blocked" className="flex w-full items-center sm:ml-auto sm:w-auto">
+            <div className="relative w-full">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary" strokeWidth={1.75} />
               <input
                 type="search"
                 name="q"
                 defaultValue={q ?? ""}
                 placeholder="Rechercher une adresse ou un domaine…"
-                className="h-8 w-72 rounded-md border border-border-default bg-surface-1 pl-8 pr-3 text-[12.5px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-accent"
+                className="h-8 w-full rounded-md sm:w-72 border border-border-default bg-surface-1 pl-8 pr-3 text-[12.5px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
           </form>

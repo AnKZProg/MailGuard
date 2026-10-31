@@ -47,7 +47,8 @@ export function InboxFilters({ query, accounts }: Props) {
             setSearchBody(next);
             // Set it directly so the submit below already carries the new value (state lands a render later).
             if (bodyInput.current) bodyInput.current.disabled = !next;
-            if (form?.q.value) form.requestSubmit();
+            const searchField = form?.elements.namedItem("q") as HTMLInputElement | null;
+            if (searchField?.value) form?.requestSubmit();
           }}
           className={cn(
             "absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded transition-colors",
@@ -63,7 +64,7 @@ export function InboxFilters({ query, accounts }: Props) {
           defaultValue={query.account ?? ""}
           aria-label="Filtrer par compte"
           onChange={(event) => event.currentTarget.form?.requestSubmit()}
-          className="h-8 w-36 shrink-0 truncate rounded-md border border-border-default bg-surface-1 px-2 text-[12.5px] text-text-secondary focus:border-accent focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
+          className="h-8 w-28 shrink-0 truncate rounded-md sm:w-36 border border-border-default bg-surface-1 px-2 text-[12.5px] text-text-secondary focus:border-accent focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
         >
           <option value="">Tous les comptes</option>
           {accounts.map((account) => (

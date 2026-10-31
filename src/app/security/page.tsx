@@ -35,9 +35,9 @@ export default async function SecurityPage() {
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle px-6">
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle px-4 sm:px-6">
         <h1 className="text-[14px] font-semibold tracking-tight text-text-primary">Sécurité</h1>
-        <span className="text-[12px] text-text-tertiary">Audit des accès à tes comptes</span>
+        <span className="hidden text-[12px] text-text-tertiary sm:inline">Audit des accès à tes comptes</span>
       </header>
 
       {accounts.length === 0 ? (
@@ -49,7 +49,7 @@ export default async function SecurityPage() {
           />
         </div>
       ) : (
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6">
           {critical.length > 0 ? (
             <div
               role="alert"

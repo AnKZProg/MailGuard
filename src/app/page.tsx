@@ -44,31 +44,33 @@ export default async function DashboardPage({
 
   return (
     <div className="flex flex-1 overflow-hidden">
+      {/* Phones show either the list or the open message, never both squeezed side by side. */}
       <section
         className={cn(
-          "flex flex-col overflow-hidden",
-          open ? "w-[min(460px,42%)] shrink-0 border-r border-border-subtle" : "flex-1",
+          "flex-col overflow-hidden",
+          open ? "hidden md:flex md:w-[min(460px,42%)] md:shrink-0 md:border-r md:border-border-subtle" : "flex flex-1",
         )}
       >
         <header className="shrink-0 border-b border-border-subtle">
-          <div className="flex h-14 items-center gap-3 px-4">
+          <div className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
             <div className="flex shrink-0 items-baseline gap-2">
               <h1 className="text-[14px] font-semibold tracking-tight text-text-primary">Boîte unifiée</h1>
               {unreadCount > 0 && (
                 <span className="text-[12px] tabular-nums text-text-tertiary">{unreadCount} non lus</span>
               )}
             </div>
-            {accounts.length > 0 && !open && <InboxFilters query={query} accounts={accounts} />}
+            {/* Narrow list (phone, or reading pane open): search wraps to its own full-width row instead of shrinking. */}
+            {accounts.length > 0 && (
+              <div className={cn("order-last flex w-full min-w-0", !open && "md:order-none md:w-auto md:flex-1")}>
+                <InboxFilters query={query} accounts={accounts} />
+              </div>
+            )}
             {!open && <ShortcutHint />}
           </div>
-          {/* With the reading pane open the list is narrow: search gets its own row instead of shrinking to an icon. */}
-          {accounts.length > 0 && open && (
-            <div className="flex px-4 pb-2.5">
-              <InboxFilters query={query} accounts={accounts} />
+          <div className="flex flex-wrap items-center gap-2 px-3 pb-2">
+            <div className="min-w-0 max-w-full">
+              <VerdictFilterTabs query={query} counts={counts} />
             </div>
-          )}
-          <div className="flex items-center gap-2 px-3 pb-2">
-            <VerdictFilterTabs query={query} counts={counts} />
             {verdict === "NEWSLETTER" && !isFiltered && (
               <div className="ml-auto flex shrink-0 items-center gap-2">
                 <UnsubscribeAllButton />
