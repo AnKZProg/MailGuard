@@ -28,7 +28,21 @@ export type GmailFilter = {
 };
 export type ImapSettings = { enabled: boolean };
 export type PopSettings = { accessWindow: string };
-export type VacationSettings = { enableAutoReply: boolean; responseSubject?: string };
+export type VacationSettings = {
+  enableAutoReply: boolean;
+  responseSubject?: string;
+  responseBodyPlainText?: string;
+  responseBodyHtml?: string;
+  /** Epoch milliseconds, as a string. */
+  endTime?: string;
+};
+export type SendAs = {
+  sendAsEmail: string;
+  displayName?: string;
+  replyToAddress?: string;
+  isPrimary?: boolean;
+  verificationStatus?: "accepted" | "pending";
+};
 
 export const getAutoForwarding = (token: string) => settingsFetch<AutoForwarding>(token, "/settings/autoForwarding");
 export const listFilters = (token: string) =>
@@ -36,6 +50,8 @@ export const listFilters = (token: string) =>
 export const getImapSettings = (token: string) => settingsFetch<ImapSettings>(token, "/settings/imap");
 export const getPopSettings = (token: string) => settingsFetch<PopSettings>(token, "/settings/pop");
 export const getVacationSettings = (token: string) => settingsFetch<VacationSettings>(token, "/settings/vacation");
+export const listSendAs = (token: string) =>
+  settingsFetch<{ sendAs?: SendAs[] }>(token, "/settings/sendAs").then((r) => r?.sendAs ?? []);
 
 /**
  * Creates a server-side Gmail filter that labels future mail matching `matchValue`

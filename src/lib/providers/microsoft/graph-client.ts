@@ -311,6 +311,19 @@ export async function listInboxRules(accessToken: string): Promise<InboxRule[]> 
   return value;
 }
 
+export type AutomaticRepliesSetting = {
+  status: "disabled" | "alwaysEnabled" | "scheduled";
+  externalAudience?: "none" | "contactsOnly" | "all";
+  internalReplyMessage?: string;
+  externalReplyMessage?: string;
+  scheduledEndDateTime?: { dateTime: string; timeZone: string };
+};
+
+export async function getAutomaticReplies(accessToken: string): Promise<AutomaticRepliesSetting> {
+  const response = await graphFetch(accessToken, `${GRAPH_BASE}/me/mailboxSettings/automaticRepliesSetting`);
+  return (await response.json()) as AutomaticRepliesSetting;
+}
+
 type RuleConditions = {
   fromAddresses?: { emailAddress?: { address?: string } }[];
   senderContains?: string[];

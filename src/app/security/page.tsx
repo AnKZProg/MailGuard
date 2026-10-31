@@ -8,13 +8,20 @@ export const dynamic = "force-dynamic";
 
 // Kept in sync by hand with GOOGLE_AUDIT_KINDS / MICROSOFT_AUDIT_KINDS — shown
 // here so "0 findings" reads as "actively checked, nothing found" instead of
-// looking like an empty, unused page. DELEGATE / ALT_ADDRESS / VACATION_SUSPICIOUS
-// exist in the FindingKind enum but have no audit implementation yet (DELEGATE
-// and ALT_ADDRESS would need a broader OAuth scope + re-consent; a real
-// VACATION_SUSPICIOUS check would need the auto-reply body, which isn't fetched
-// today) — deliberately left off this list rather than implied as covered.
-const GOOGLE_CHECKS = ["Transfert automatique (compte)", "Règles avec transfert", "IMAP/POP activé"];
-const MICROSOFT_CHECKS = ["Règles de boîte de réception avec transfert"];
+// looking like an empty, unused page. What the providers don't let a personal
+// account read is listed too, so it isn't implied as covered.
+const GOOGLE_CHECKS = [
+  "Transfert automatique (compte)",
+  "Règles avec transfert",
+  "IMAP/POP activé",
+  "Adresses d'envoi et de réponse",
+  "Réponse automatique",
+];
+const MICROSOFT_CHECKS = ["Règles de boîte de réception avec transfert", "Réponse automatique"];
+const NOT_CHECKABLE: Record<"GOOGLE" | "MICROSOFT", string> = {
+  GOOGLE: "Accès délégués : Google ne les montre qu'aux comptes d'entreprise. À vérifier dans Gmail › Paramètres › Comptes.",
+  MICROSOFT: "Accès délégués et transfert du compte : non exposés pour les comptes Outlook personnels. À vérifier dans Outlook › Paramètres › Courrier.",
+};
 
 export default async function SecurityPage() {
   const [accounts, findings] = await Promise.all([
@@ -58,11 +65,11 @@ export default async function SecurityPage() {
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-verdict-phishing" strokeWidth={1.75} />
               <div>
                 <p className="text-[13px] font-semibold text-verdict-phishing">
-                  {critical.length === 1 ? "Une règle de transfert à vérifier" : `${critical.length} règles de transfert à vérifier`}
+                  {critical.length === 1 ? "Un réglage à vérifier en priorité" : `${critical.length} réglages à vérifier en priorité`}
                 </p>
                 <p className="mt-0.5 text-[12.5px] text-text-secondary">
-                  Si tu ne les as pas créées toi-même, quelqu&apos;un peut lire ton courrier à ta place. Change le mot de
-                  passe du compte, puis supprime la règle.
+                  Si tu ne l&apos;as pas configuré toi-même, quelqu&apos;un peut lire ton courrier ou détourner tes réponses.
+                  Change le mot de passe du compte, puis supprime le réglage.
                 </p>
               </div>
             </div>
@@ -70,7 +77,7 @@ export default async function SecurityPage() {
             <div className="flex items-center gap-3 rounded-lg border border-verdict-legitimate/25 bg-verdict-legitimate-soft px-4 py-3">
               <ShieldCheck className="h-4 w-4 shrink-0 text-verdict-legitimate" strokeWidth={1.75} />
               <p className="text-[13px] font-medium text-text-primary">
-                Aucun transfert suspect sur {accounts.length === 1 ? "ton compte" : `tes ${accounts.length} comptes`}.
+                Aucun réglage suspect sur {accounts.length === 1 ? "ton compte" : `tes ${accounts.length} comptes`}.
               </p>
             </div>
           )}
@@ -98,6 +105,7 @@ export default async function SecurityPage() {
                         </li>
                       ))}
                     </ul>
+                    <p className="text-[11.5px] text-text-tertiary">{NOT_CHECKABLE[account.provider]}</p>
                   </div>
                 );
               })}

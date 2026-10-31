@@ -1,13 +1,14 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { acknowledgeFinding } from "@/app/security/actions";
+import { describeFinding } from "@/lib/security/describe";
 import type { SecurityFinding } from "@prisma/client";
 
 const KIND_LABEL: Record<string, string> = {
   AUTO_FORWARD: "Transfert automatique (compte)",
   INBOX_RULE_FORWARD: "Règle de boîte de réception avec transfert",
   DELEGATE: "Délégation d'accès",
-  ALT_ADDRESS: "Adresse alternative",
+  ALT_ADDRESS: "Adresse d'envoi ou de réponse",
   IMAP_POP_ENABLED: "IMAP/POP activé",
   VACATION_SUSPICIOUS: "Réponse automatique suspecte",
 };
@@ -23,13 +24,14 @@ type Props = {
 };
 
 export function FindingRow({ finding }: Props) {
+  const description = describeFinding(finding);
   return (
     <div className={cn("flex items-start gap-3 rounded-lg border px-4 py-3", SEVERITY_STYLE[finding.severity])}>
       <div className="min-w-0 flex-1">
         <p className="text-[13px] font-medium text-text-primary">{KIND_LABEL[finding.kind] ?? finding.kind}</p>
         <p className="mt-0.5 text-[12px] text-text-secondary">
           {finding.account.emailAddress}
-          {finding.externalTarget ? ` → transfère vers ${finding.externalTarget}` : ""}
+          {description ? ` — ${description}` : ""}
         </p>
         <p className="mt-1 text-[11px] text-text-tertiary">
           Détecté le {finding.firstSeenAt.toLocaleDateString("fr-FR")}
