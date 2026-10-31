@@ -30,7 +30,8 @@ export const GOOGLE_AUDIT_KINDS = [
  * delegates API only answers service accounts with Workspace domain-wide
  * authority, never a personal account's own OAuth token.
  */
-export async function auditGoogleAccount(accessToken: string, ownAddress: string): Promise<RawFinding[]> {
+/** `ownAddresses`: this account first, then every other mailbox connected to MailGuard — replies routed there are the user's own. */
+export async function auditGoogleAccount(accessToken: string, ownAddresses: string[]): Promise<RawFinding[]> {
   const findings: RawFinding[] = [];
 
   const autoForwarding = await getAutoForwarding(accessToken);
@@ -68,10 +69,10 @@ export async function auditGoogleAccount(accessToken: string, ownAddress: string
   }
 
   const sendAs = await listSendAs(accessToken);
-  findings.push(...sendAsFindings(sendAs, ownAddress));
+  findings.push(...sendAsFindings(sendAs, ownAddresses));
 
   const vacation = await getVacationSettings(accessToken);
-  const vacationFinding = vacation ? googleVacationFinding(vacation, [ownAddress, ...sendAs.map((s) => s.sendAsEmail)]) : null;
+  const vacationFinding = vacation ? googleVacationFinding(vacation, [...ownAddresses, ...sendAs.map((s) => s.sendAsEmail)]) : null;
   if (vacationFinding) findings.push(vacationFinding);
 
   return findings;
@@ -82,12 +83,12 @@ export async function auditGoogleAccount(accessToken: string, ownAddress: string
  * the correspondent sees the real sender and never notices. Extra send-as
  * addresses are listed so the user can confirm they're theirs.
  */
-export function sendAsFindings(entries: SendAs[], ownAddress: string): RawFinding[] {
-  const own = ownAddress.toLowerCase();
+export function sendAsFindings(entries: SendAs[], ownAddresses: string[]): RawFinding[] {
+  const own = new Set(ownAddresses.map((a) => a.toLowerCase()));
   const findings: RawFinding[] = [];
   for (const entry of entries) {
     const replyTo = entry.replyToAddress?.trim().toLowerCase();
-    if (replyTo && replyTo !== entry.sendAsEmail.toLowerCase() && replyTo !== own) {
+    if (replyTo && replyTo !== entry.sendAsEmail.toLowerCase() && !own.has(replyTo)) {
       findings.push({
         kind: "ALT_ADDRESS",
         severity: entry.isPrimary ? "CRITICAL" : "WARNING",
@@ -95,7 +96,7 @@ export function sendAsFindings(entries: SendAs[], ownAddress: string): RawFindin
         rawConfig: { reason: "reply_to", sendAsEmail: entry.sendAsEmail, replyToAddress: entry.replyToAddress },
       });
     }
-    if (!entry.isPrimary && entry.sendAsEmail.toLowerCase() !== own) {
+    if (!entry.isPrimary && !own.has(entry.sendAsEmail.toLowerCase())) {
       findings.push({
         kind: "ALT_ADDRESS",
         severity: "INFO",

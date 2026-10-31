@@ -1,4 +1,4 @@
-import { mkdir, readdir, rm, stat } from "node:fs/promises";
+import { mkdir, readdir, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
 
 /**
@@ -55,9 +55,12 @@ export async function backupDatabase(
 
   let created = false;
   if (force || !(await exists(file))) {
-    // VACUUM INTO refuses to overwrite: a forced same-day backup replaces the earlier one.
-    if (await exists(file)) await rm(file);
-    await execute(`VACUUM INTO '${file.replaceAll("'", "''")}'`);
+    // Written under a temporary name and renamed once complete: a crash mid-copy must not leave
+    // a truncated file that later runs would take for today's finished backup.
+    const partial = `${file}.partial`;
+    await rm(partial, { force: true });
+    await execute(`VACUUM INTO '${partial.replaceAll("'", "''")}'`);
+    await rename(partial, file);
     created = true;
   }
 

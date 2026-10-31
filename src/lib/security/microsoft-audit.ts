@@ -22,7 +22,7 @@ function firstTarget(actions: RuleActions): string | undefined {
  * this delegated-permission scan). Documented in docs/setup-azure.md so the gap
  * isn't silently assumed away.
  */
-export async function auditMicrosoftAccount(accessToken: string, ownAddress: string): Promise<RawFinding[]> {
+export async function auditMicrosoftAccount(accessToken: string, ownAddresses: string[]): Promise<RawFinding[]> {
   const rules = await listInboxRules(accessToken);
   const findings: RawFinding[] = [];
 
@@ -39,19 +39,19 @@ export async function auditMicrosoftAccount(accessToken: string, ownAddress: str
     }
   }
 
-  const vacationFinding = microsoftAutoReplyFinding(await getAutomaticReplies(accessToken), ownAddress);
+  const vacationFinding = microsoftAutoReplyFinding(await getAutomaticReplies(accessToken), ownAddresses);
   if (vacationFinding) findings.push(vacationFinding);
 
   return findings;
 }
 
-export function microsoftAutoReplyFinding(setting: AutomaticRepliesSetting, ownAddress: string, now = Date.now()): RawFinding | null {
+export function microsoftAutoReplyFinding(setting: AutomaticRepliesSetting, ownAddresses: string[], now = Date.now()): RawFinding | null {
   if (setting.status === "disabled") return null;
   // Graph returns schedule times as UTC unless the mailbox asked otherwise; hours of skew only delay auto-resolution.
   const end = setting.scheduledEndDateTime;
   if (setting.status === "scheduled" && end && Date.parse(`${end.dateTime}Z`) < now) return null;
   const text = `${htmlToText(setting.externalReplyMessage ?? "")} ${htmlToText(setting.internalReplyMessage ?? "")}`;
-  const assessment = assessAutoReply(text, [ownAddress]);
+  const assessment = assessAutoReply(text, ownAddresses);
   if (!assessment) return null;
   return {
     kind: "VACATION_SUSPICIOUS",
