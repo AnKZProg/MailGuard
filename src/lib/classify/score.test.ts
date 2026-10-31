@@ -206,6 +206,19 @@ describe("classify — learned prediction", () => {
     expect(classify(phishing, null, { verdict: "LEGITIMATE", probability: 0.9999 }).verdict).toBe("PHISHING");
   });
 
+  it("never lets the learner clear mail the provider itself filed as spam", () => {
+    const providerSpam = extractFeatures(message({ providerSpamFlag: true }));
+    const result = classify(providerSpam, null, { verdict: "LEGITIMATE", probability: 0.99999 });
+    expect(result.verdict).toBe("SPAM");
+    expect(result.signals.some((s) => s.ruleId === "learned.user_feedback")).toBe(false);
+  });
+
+  it("can still clear a rule-made spam verdict the provider did not flag", () => {
+    const strangerOpener = extractFeatures(message({ snippet: "Je vous écris pour faire connaissance." }), { isFirstContact: true });
+    expect(classify(strangerOpener, null).verdict).toBe("SPAM");
+    expect(classify(strangerOpener, null, { verdict: "LEGITIMATE", probability: 0.999 }).verdict).toBe("LEGITIMATE");
+  });
+
   it("sender policy still beats the learner", () => {
     expect(classify(plain, "ALLOW", { verdict: "SPAM", probability: 1 }).verdict).toBe("LEGITIMATE");
   });

@@ -101,4 +101,58 @@ describe("scam rules", () => {
       ),
     ).toBe("LEGITIMATE");
   });
+  it("a fake Norton 'protection inactive' alert from a random domain is PHISHING", () => {
+    expect(
+      verdictOf(
+        message({
+          fromAddress: "no-reply@--3ezfshbpofzfppk.znrxmutse.fr",
+          fromDomain: "--3ezfshbpofzfppk.znrxmutse.fr",
+          fromDisplayName: "✅️NORTON",
+          subject: "⛔ALERTE SYSTÈME : PROTECTION INACTIVE",
+          snippet: "ALERTE SYSTÈME : PROTECTION NORTON INACTIVE Votre abonnement de sécurité a expiré.",
+        }),
+        false,
+      ),
+    ).toBe("PHISHING");
+  });
+
+  it("a real renewal notice from norton.com is left alone", () => {
+    expect(
+      verdictOf(
+        message({
+          fromAddress: "noreply@mail.norton.com",
+          fromDomain: "mail.norton.com",
+          fromDisplayName: "Norton",
+          subject: "Votre abonnement Norton 360 expire bientôt",
+        }),
+      ),
+    ).toBe("LEGITIMATE");
+  });
+
+  it("an antivirus word inside another word does not count as the brand", () => {
+    expect(verdictOf(message({ subject: "Nortonville : votre abonnement a expiré" }), false)).toBe("LEGITIMATE");
+  });
+
+  it("a stranger announcing new bank details for the rent is PHISHING", () => {
+    expect(
+      verdictOf(
+        message({
+          fromAddress: "ccaceres10@abc.gob.ar",
+          fromDomain: "abc.gob.ar",
+          fromDisplayName: "GESTION IMMOBILIERE",
+          subject: "Mise à jour de nos coordonnées bancaires",
+          snippet: "le compte dédié au règlement des loyers est en cours de changement. Ne plus effectuer de paiement sur l’ancien compte.",
+        }),
+      ),
+    ).toBe("PHISHING");
+  });
+
+  it("a known correspondent changing bank details gets a warning signal but stays in the inbox", () => {
+    const result = classify(
+      extractFeatures(message({ subject: "Nouveau RIB pour les loyers", snippet: "voici notre nouveau rib" }), { isFirstContact: false }),
+      null,
+    );
+    expect(result.verdict).toBe("LEGITIMATE");
+    expect(result.signals.some((s) => s.ruleId === "content.bank_details_change")).toBe(true);
+  });
 });

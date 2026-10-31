@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { unblockSender } from "@/lib/policy/block-sender";
 import { listBlockedSenders, toClientPolicies, type BlockedSenderPolicy } from "@/lib/queries/blocked-senders";
 
-export async function unblockSenderAction(policyId: string): Promise<void> {
-  await unblockSender(policyId);
+export async function unblockSenderAction(policyId: string): Promise<{ providerRuleRemoved: boolean }> {
+  const result = await unblockSender(policyId);
   revalidatePath("/blocked");
+  return result;
 }
 
 export async function loadMoreBlockedSenders(

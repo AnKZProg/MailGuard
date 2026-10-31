@@ -114,3 +114,39 @@ export const ROMANCE_SCAM_KEYWORDS = [
   "make your acquaintance",
   "get to know you",
 ];
+
+/**
+ * Fake antivirus renewals ("Norton: protection inactive, renew today") — the
+ * brand plus a lapse phrase, sent from anywhere but the vendor's own domains.
+ */
+export const ANTIVIRUS_BRANDS: { brand: string; domains: string[] }[] = [
+  { brand: "norton", domains: ["norton.com", "nortonlifelock.com", "gen.digital"] },
+  { brand: "mcafee", domains: ["mcafee.com"] },
+  { brand: "avast", domains: ["avast.com"] },
+  { brand: "kaspersky", domains: ["kaspersky.com", "kaspersky.fr"] },
+  { brand: "bitdefender", domains: ["bitdefender.com", "bitdefender.fr"] },
+  { brand: "malwarebytes", domains: ["malwarebytes.com"] },
+];
+
+export const SUBSCRIPTION_LAPSE_KEYWORDS = [
+  "expiré",
+  "expire",
+  "a pris fin",
+  "protection inactive",
+  "renouvel",
+  "expired",
+  "coverage has ended",
+  "renew",
+];
+
+/** Rent/invoice payment-diversion fraud: "our bank details changed, stop paying the old account". */
+export const BANK_DETAILS_CHANGE_KEYWORDS = [
+  "coordonnées bancaires",
+  "changement de rib",
+  "nouveau rib",
+  "changement de compte bancaire",
+  "ne plus effectuer de paiement sur l",
+  "new bank details",
+  "updated bank details",
+  "change of bank account",
+];
