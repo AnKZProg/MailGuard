@@ -28,6 +28,8 @@ A local, privacy-first mail-triage dashboard for Gmail and Outlook/Microsoft 365
 </tr>
 </table>
 
+Competitor comparison (estimates): [docs/comparatif-concurrents.png](docs/comparatif-concurrents.png)
+
 ## What It Does
 
 MailGuard connects to your own Gmail and Outlook accounts via OAuth (you create the app registrations) and runs entirely on your machine. It:
@@ -178,6 +180,15 @@ Coverage targets:
 - **Overall project**: ≥ 80%
 
 Tests use **Vitest** with `@vitest/coverage-v8`.
+
+End-to-end tests (**Playwright**, using the installed Google Chrome) run against
+the production build on port 3100, with a throwaway database in `e2e/.data/` and
+fake accounts — never the real one:
+
+```bash
+npm run build
+npm run test:e2e
+```
 
 ## Security Principles
 

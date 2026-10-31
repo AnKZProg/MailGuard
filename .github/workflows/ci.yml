@@ -39,7 +39,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # jsdom 30 (component tests) needs Node 22.22+/24.15+; Node 20 is also deprecated on runners.
+          node-version: "24"
           cache: npm
 
       - name: Install dependencies
@@ -74,3 +75,14 @@ jobs:
         # global types (RouteContext, LayoutProps, etc.) that tsconfig.json
         # includes — a standalone tsc run before any build fails on them.
         run: npm run typecheck
+
+      - name: End-to-end tests
+        # Ubuntu only: one browser run is enough, and GitHub's Ubuntu image
+        # ships Google Chrome, which the Playwright config uses as-is.
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run test:e2e
+        env:
+          GOOGLE_CLIENT_ID: "ci-placeholder-google-client-id"
+          GOOGLE_CLIENT_SECRET: "ci-placeholder-google-client-secret"
+          MICROSOFT_CLIENT_ID: "ci-placeholder-microsoft-client-id"
+          MICROSOFT_CLIENT_SECRET: "ci-placeholder-microsoft-client-secret"
