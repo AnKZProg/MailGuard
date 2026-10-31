@@ -1,5 +1,6 @@
 import { syncAllActiveAccounts } from "@/lib/sync/run-sync";
 import { bootstrapLearnerOnce } from "@/lib/classify/learner/store";
+import { backupNow } from "@/lib/backup/run-backup";
 
 const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const INITIAL_SYNC_DELAY_MS = 10 * 1000;
@@ -12,6 +13,8 @@ async function runSync(): Promise<void> {
   const results = await syncAllActiveAccounts();
   const failed = results.filter((r) => r.status === "rejected").length;
   if (failed > 0) console.error(`[server-auto-sync] ${failed}/${results.length} compte(s) en échec`);
+  // Same tick as the sync: the first run of each day leaves a snapshot, later runs find it and skip.
+  await backupNow().catch((err) => console.error("[backup] sauvegarde quotidienne échouée", err));
 }
 
 /**
