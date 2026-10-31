@@ -51,3 +51,6 @@ next-env.d.ts
 /e2e/.data/
 /test-results/
 /playwright-report/
+
+# Personal Windows shortcuts to the launcher (e.g. MailGuard.lnk)
+*.lnk
