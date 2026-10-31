@@ -34,7 +34,7 @@ jobs:
       npm_config_script_shell: ${{ matrix.os == 'windows-2022' && 'C:\Program Files\Git\bin\bash.exe' || '/bin/bash' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
