@@ -15,7 +15,9 @@
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "db:seed:dev": "node scripts/dev-seed.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "docker:up": "docker compose up -d --build",
+    "docker:logs": "docker compose logs -f mailguard"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.10.0",
@@ -50,14 +52,14 @@
     "typescript": "^5",
     "vitest": "^5.0.5"
   },
+  "overrides": {
+    "minimatch": "^11.0.5"
+  },
   "allowScripts": {
     "unrs-resolver@1.12.2": true,
     "better-sqlite3@12.11.1": true,
     "better-sqlite3@13.0.3": true,
     "prisma@7.10.1": true,
     "@prisma/engines@7.10.1": true
-  },
-  "overrides": {
-    "minimatch": "^11.0.5"
   }
 }
