@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { organizeAccountBySender, organizeAllAccountsBySender, type OrganizeBySenderSummary } from "@/lib/organize/organize-by-sender";
 import { fileAllAccountsIntoExistingFolders, type FileIntoExistingSummary } from "@/lib/organize/file-into-existing-folders";
+import { assertId } from "@/lib/http/action-input";
 
 export async function organizeBySender(accountId: string): Promise<OrganizeBySenderSummary> {
+  assertId(accountId);
   const summary = await organizeAccountBySender(accountId);
   revalidatePath("/");
   revalidatePath("/accounts");

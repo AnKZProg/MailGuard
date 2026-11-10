@@ -8,14 +8,20 @@ import { restoreMessage } from "@/lib/quarantine/restore";
 import { blockSenderPermanently } from "@/lib/policy/block-sender";
 import { correctVerdict, learnQuietly } from "@/lib/classify/correct-verdict";
 import type { Verdict } from "@prisma/client";
+import { assertId, assertScope, type SenderScope } from "@/lib/http/action-input";
 
 const VERDICTS: readonly Verdict[] = ["LEGITIMATE", "NEWSLETTER", "SPAM", "PHISHING"];
+
+function assertMessageId(messageId: unknown): asserts messageId is string {
+  assertId(messageId, "Identifiant de message");
+}
 
 async function writeAuditLog(action: string, accountId: string, messageIds: string[]) {
   await db.auditLog.create({ data: { actor: "USER", action, accountId, messageIds: JSON.stringify(messageIds) } });
 }
 
 export async function quarantineNow(messageId: string): Promise<void> {
+  assertMessageId(messageId);
   await quarantineMessage(messageId, "spam");
   await learnQuietly(messageId, "SPAM");
   revalidatePath("/");
@@ -23,6 +29,7 @@ export async function quarantineNow(messageId: string): Promise<void> {
 }
 
 export async function restoreNow(messageId: string): Promise<void> {
+  assertMessageId(messageId);
   await restoreMessage(messageId);
   await learnQuietly(messageId, "LEGITIMATE");
   revalidatePath("/");
@@ -30,16 +37,21 @@ export async function restoreNow(messageId: string): Promise<void> {
 }
 
 export async function trashNow(messageId: string): Promise<void> {
+  assertMessageId(messageId);
   await trashMessageById(messageId);
   revalidatePath("/");
 }
 
 export async function toggleRead(messageId: string, isRead: boolean): Promise<void> {
+  assertMessageId(messageId);
+  if (typeof isRead !== "boolean") throw new Error("Valeur invalide");
   await db.message.update({ where: { id: messageId }, data: { isRead } });
   revalidatePath("/");
 }
 
-export async function allowSender(messageId: string, scope: "ADDRESS" | "DOMAIN"): Promise<void> {
+export async function allowSender(messageId: string, scope: SenderScope): Promise<void> {
+  assertMessageId(messageId);
+  assertScope(scope);
   const message = await db.message.findUniqueOrThrow({ where: { id: messageId } });
   const pattern = scope === "ADDRESS" ? message.fromAddress : message.fromDomain;
   const existing = await db.senderPolicy.findFirst({ where: { scope, pattern, accountId: message.accountId } });
@@ -58,7 +70,9 @@ export async function allowSender(messageId: string, scope: "ADDRESS" | "DOMAIN"
  * server-side Gmail filter / Outlook rule so the provider itself intercepts
  * future mail from this pattern — see blockSenderPermanently.
  */
-export async function blockSender(messageId: string, scope: "ADDRESS" | "DOMAIN"): Promise<void> {
+export async function blockSender(messageId: string, scope: SenderScope): Promise<void> {
+  assertMessageId(messageId);
+  assertScope(scope);
   const message = await db.message.findUniqueOrThrow({ where: { id: messageId } });
   const pattern = scope === "ADDRESS" ? message.fromAddress : message.fromDomain;
   await blockSenderPermanently(message.accountId, scope, pattern);
@@ -69,6 +83,7 @@ export async function blockSender(messageId: string, scope: "ADDRESS" | "DOMAIN"
 
 /** "Ce mail est en fait…" — trains the local learner and moves the message accordingly. */
 export async function correctVerdictAction(messageId: string, verdict: Verdict): Promise<void> {
+  assertMessageId(messageId);
   if (!VERDICTS.includes(verdict)) throw new Error("Verdict inconnu");
   await correctVerdict(messageId, verdict);
   revalidatePath("/");
