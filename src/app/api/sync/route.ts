@@ -8,12 +8,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "cross_origin_forbidden" }, { status: 403 });
   }
 
-  const body = await request.json().catch(() => ({}) as { accountId?: string });
+  const body: unknown = await request.json().catch(() => ({}));
+  const rawAccountId = typeof body === "object" && body !== null ? (body as { accountId?: unknown }).accountId : undefined;
+  if (rawAccountId !== undefined && (typeof rawAccountId !== "string" || rawAccountId.length > 64)) {
+    return NextResponse.json({ error: "invalid_account_id" }, { status: 400 });
+  }
+  const accountId = rawAccountId;
   let total: number;
   let failed: number;
-  if (body.accountId) {
+  if (accountId) {
     total = 1;
-    failed = await enqueueSync(body.accountId).then(
+    failed = await enqueueSync(accountId).then(
       () => 0,
       () => 1,
     );

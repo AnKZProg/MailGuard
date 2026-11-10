@@ -56,5 +56,8 @@
     "better-sqlite3@13.0.3": true,
     "prisma@7.10.1": true,
     "@prisma/engines@7.10.1": true
+  },
+  "overrides": {
+    "minimatch": "^11.0.5"
   }
 }
