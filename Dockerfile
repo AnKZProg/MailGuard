@@ -38,6 +38,11 @@ RUN node_modules/.bin/prisma db push \
 # --- Runtime -----------------------------------------------------------------
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 WORKDIR /app
+# Prisma's CLI detects the OpenSSL version to pick its engine; without it, it
+# falls back to a guess and tries to write engines into node_modules at startup.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openssl \
+ && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     CHECKPOINT_DISABLE=1 \
