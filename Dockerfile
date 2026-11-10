@@ -40,9 +40,15 @@ FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 WORKDIR /app
 # Prisma's CLI detects the OpenSSL version to pick its engine; without it, it
 # falls back to a guess and tries to write engines into node_modules at startup.
+# The server never calls npm (CMD and healthcheck run node_modules/.bin and
+# node directly), so the base image's npm/corepack — and the old undici and
+# brace-expansion they bundle — are removed.
 RUN apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends openssl \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* \
+ && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     CHECKPOINT_DISABLE=1 \
