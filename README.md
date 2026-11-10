@@ -111,6 +111,10 @@ npm run db:studio   # Open Prisma Studio GUI
 npm test            # Run all tests (Vitest)
 npm run test:watch  # Watch mode
 
+# Docker
+npm run docker:up   # Build and start the container (http://127.0.0.1:3000)
+npm run docker:logs # Follow the container logs
+
 # Linting & types
 npm run lint        # Check code with ESLint
 npm run typecheck   # Check types with tsc --noEmit
@@ -242,9 +246,26 @@ npm run start
 
 The app still binds to `127.0.0.1:3000` only (not public). To expose it over a network, use a reverse proxy (e.g., nginx) and set `APP_URL` accordingly.
 
+## Running in Docker
+
+Fill in `.env.local` as above, then:
+
+```bash
+docker compose up -d          # build the image the first time, then start in the background
+docker compose logs -f mailguard
+docker compose up -d --build  # after updating the code
+```
+
+- **Same address**: published on `127.0.0.1:3000` only, invisible to the local network, so the OAuth redirect URIs don't change.
+- **Data**: the database lives in the `mailguard_mailguard-data` Docker volume (SQLite on a Windows/macOS folder shared into a Linux container is slow and its locking isn't reliable there). Daily backups are written to `data/backups` on the host.
+- **Isolation**: read-only filesystem, all capabilities dropped, `no-new-privileges`, non-root user, 1 GB memory cap. Secrets (`.env.local`) and the database never enter the image (`.dockerignore`).
+- **Self-healing**: `restart: unless-stopped` plus a health check on `/api/health`; the container comes back with Docker Desktop.
+- **Schema updates** run at startup and refuse destructive changes rather than dropping data.
+- **Restore a backup**: `docker compose stop`, copy the chosen backup over `mailguard.db` in the volume (`docker compose cp`), start again.
+
 ## Windows Launcher
 
-Double-click `Lancer-MailGuard.bat` to build and start the server. This is a convenience shortcut; you can also use `npm run dev` or `npm run start` from PowerShell or Git Bash.
+Double-click `Lancer-MailGuard.bat`: it starts Docker Desktop if needed, runs `docker compose up -d`, waits until the app is healthy and opens it in the browser. Without Docker, use `npm run dev` or `npm run start` from PowerShell or Git Bash.
 
 ## License
 
