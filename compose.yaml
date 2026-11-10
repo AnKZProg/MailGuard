@@ -1,0 +1,54 @@
+# `docker compose up -d` — builds the image the first time, then starts
+# MailGuard in the background and restarts it with Docker Desktop.
+name: mailguard
+
+services:
+  mailguard:
+    build: .
+    image: mailguard:local
+    container_name: mailguard
+    restart: unless-stopped
+    init: true
+    env_file:
+      - path: .env.local
+        required: true
+    environment:
+      DATABASE_URL: file:./data/mailguard.db
+      APP_URL: http://127.0.0.1:3000
+      TZ: Europe/Paris
+    ports:
+      # Loopback only: reachable from this PC's browser, invisible to the network.
+      # Same address as before, so the Google/Microsoft redirect URIs don't change.
+      - "127.0.0.1:3000:3000"
+    volumes:
+      # The database lives in a Docker volume: SQLite on a Windows folder shared
+      # into a Linux container is slow and its WAL locking isn't reliable there.
+      - mailguard-data:/app/data
+      # Daily backups are plain file copies, so they go to a visible Windows folder.
+      - ./data/backups:/app/data/backups
+    # Hardening: the app can only write its data and cache, gains no privileges.
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      # Probe every 5 s while starting, so "healthy" (and the launcher) don't wait 30 s.
+      start_interval: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mailguard-data:
