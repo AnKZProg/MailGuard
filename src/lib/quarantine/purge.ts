@@ -42,11 +42,16 @@ async function purgeItems(items: ItemWithMessage[], actor: AuditActor): Promise<
   return { purged, failed };
 }
 
+// Only accounts that can still reach their provider: an item of an account that
+// needs reconnecting can't be trashed, so it waits (still quarantined) instead of
+// failing — with a stack trace — on every sync tick until the user reconnects.
+const REACHABLE_ACCOUNT = { message: { account: { status: "ACTIVE" as const } } };
+
 /** Moves every quarantine item past its retention date to the provider's trash. Never
  * hard-deletes — permanent deletion stays a manual, explicit action outside this engine. */
 export async function purgeDueItems(): Promise<PurgeSummary> {
   const due = await db.quarantineItem.findMany({
-    where: { purgeAfter: { lte: new Date() }, purgedAt: null, restoredAt: null },
+    where: { purgeAfter: { lte: new Date() }, purgedAt: null, restoredAt: null, ...REACHABLE_ACCOUNT },
     include: { message: { include: { account: true } } },
   });
   return purgeItems(due, "ENGINE");
@@ -57,7 +62,7 @@ export async function purgeDueItems(): Promise<PurgeSummary> {
  * permanent hard-delete. */
 export async function purgeAllActiveItems(): Promise<PurgeSummary> {
   const active = await db.quarantineItem.findMany({
-    where: { purgedAt: null, restoredAt: null },
+    where: { purgedAt: null, restoredAt: null, ...REACHABLE_ACCOUNT },
     include: { message: { include: { account: true } } },
   });
   return purgeItems(active, "USER");
