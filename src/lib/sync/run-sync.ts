@@ -30,12 +30,21 @@ function isInsufficientScopeError(err: unknown): boolean {
   return err instanceof GmailApiError && err.reason === "insufficientPermissions";
 }
 
-/** Syncs every ACTIVE account, isolated per account (mapWithConcurrency never
+/** ERROR is retried on every tick: it is what a *transient* failure leaves
+ * behind (e.g. a network outage — "fetch failed" — while refreshing a token),
+ * and a successful sync puts the account back to ACTIVE. Excluding it froze
+ * 10 of 12 boxes for a whole day after one night of network cuts (MAIL-26).
+ * NEEDS_RECONSENT stays out: only the user re-running OAuth can fix it. */
+export const SYNCABLE_STATUSES = ["ACTIVE", "ERROR"] as const;
+
+/** Syncs every ACTIVE or ERROR account, isolated per account (mapWithConcurrency never
  * lets one account's rejection stop the others). Shared by the manual/auto
  * "Synchroniser" API route and the server-side background scheduler so both
  * use the exact same concurrency and account-selection logic. */
 export async function syncAllActiveAccounts(): Promise<PromiseSettledResult<void>[]> {
-  const accountIds = (await db.account.findMany({ where: { status: "ACTIVE" }, select: { id: true } })).map((a) => a.id);
+  const accountIds = (
+    await db.account.findMany({ where: { status: { in: [...SYNCABLE_STATUSES] } }, select: { id: true } })
+  ).map((a) => a.id);
   return mapWithConcurrency(accountIds, SYNC_CONCURRENCY, (id) => enqueueSync(id));
 }
 
