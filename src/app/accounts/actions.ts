@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { setShadowMode } from "@/lib/settings/app-settings";
+import { setAllowlistOnly, setShadowMode } from "@/lib/settings/app-settings";
+import { assertId } from "@/lib/http/action-input";
 
 export async function disconnectAccount(formData: FormData): Promise<void> {
   const accountId = String(formData.get("accountId") ?? "");
@@ -21,4 +22,24 @@ export async function toggleShadowMode(formData: FormData): Promise<void> {
   await setShadowMode(formData.get("enabled") === "true");
   // The sidebar's status pill and toggle live in the root layout — refresh every page, not just /accounts.
   revalidatePath("/", "layout");
+}
+
+export async function toggleAllowlistOnly(formData: FormData): Promise<void> {
+  const accountId = formData.get("accountId");
+  assertId(accountId, "Identifiant de compte");
+  const enabled = formData.get("enabled") === "true";
+  // Only for a box MailGuard actually knows — never leave a setting row for a stray id.
+  const account = await db.account.findUnique({ where: { id: accountId }, select: { id: true } });
+  if (!account) return;
+
+  await setAllowlistOnly(accountId, enabled);
+  await db.auditLog.create({
+    data: {
+      actor: "USER",
+      action: enabled ? "allowlist_only_on" : "allowlist_only_off",
+      accountId,
+      messageIds: "[]",
+    },
+  });
+  revalidatePath("/accounts");
 }

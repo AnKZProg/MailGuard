@@ -2,6 +2,7 @@ import { RefreshCw, AlertTriangle } from "lucide-react";
 import { ProviderMark } from "./ProviderMark";
 import { OrganizeBySenderButton } from "./OrganizeBySenderButton";
 import { DisconnectButton } from "./DisconnectButton";
+import { AllowlistOnlyToggle } from "./AllowlistOnlyToggle";
 import { formatDateTime } from "@/lib/format/mail-date";
 import { cn } from "@/lib/cn";
 
@@ -13,6 +14,8 @@ type AccountRowProps = {
   colorToken: string;
   status: "ACTIVE" | "NEEDS_RECONSENT" | "ERROR";
   lastSyncAt: Date | null;
+  /** When "allowlist only" was turned on for this box, or null if off. */
+  allowlistOnlySince: Date | null;
 };
 
 // Both /start routes force a fresh consent screen (Google: prompt=consent —
@@ -28,7 +31,16 @@ const RECONNECT_HREF: Record<AccountRowProps["provider"], string> = {
   MICROSOFT: "/api/auth/microsoft/start",
 };
 
-export function AccountRow({ id, provider, emailAddress, displayName, colorToken, status, lastSyncAt }: AccountRowProps) {
+export function AccountRow({
+  id,
+  provider,
+  emailAddress,
+  displayName,
+  colorToken,
+  status,
+  lastSyncAt,
+  allowlistOnlySince,
+}: AccountRowProps) {
   const needsReconnect = status !== "ACTIVE";
   return (
     <div
@@ -75,6 +87,7 @@ export function AccountRow({ id, provider, emailAddress, displayName, colorToken
       )}
 
       <div className="flex items-center gap-1">
+        <AllowlistOnlyToggle accountId={id} since={allowlistOnlySince} />
         <OrganizeBySenderButton accountId={id} />
         <DisconnectButton accountId={id} emailAddress={emailAddress} />
       </div>

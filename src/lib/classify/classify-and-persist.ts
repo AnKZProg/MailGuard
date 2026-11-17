@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
 import { extractFeatures } from "@/lib/classify/features";
 import { classify, type PolicyOverride, type Verdict } from "@/lib/classify/score";
-import { isShadowModeEnabled } from "@/lib/settings/app-settings";
+import { getAllowlistOnlyAccounts, isShadowModeEnabled } from "@/lib/settings/app-settings";
+import { isUnknownSenderUnderAllowlist, quarantineAsUnknownSender } from "@/lib/classify/allowlist-only";
 import { quarantineMessage } from "@/lib/quarantine/quarantine";
 import { archiveNewsletterMessage } from "@/lib/classify/archive-newsletter";
 import { predictForMessage } from "@/lib/classify/learner/store";
@@ -12,11 +13,29 @@ import type { SenderPolicy } from "@prisma/client";
  * process. Callers that classify many messages in a loop should load this
  * once up front with `loadClassifyContext()` and pass it in, instead of
  * `classifyAndPersist` re-querying both on every single message. */
-export type ClassifyContext = { senderPolicies: SenderPolicy[]; shadowModeEnabled: boolean };
+export type ClassifyContext = {
+  senderPolicies: SenderPolicy[];
+  shadowModeEnabled: boolean;
+  /** accountId → when "allowlist only" was turned on for that box. */
+  allowlistOnly: Map<string, Date>;
+};
 
 export async function loadClassifyContext(): Promise<ClassifyContext> {
-  const [senderPolicies, shadowModeEnabled] = await Promise.all([db.senderPolicy.findMany(), isShadowModeEnabled()]);
-  return { senderPolicies, shadowModeEnabled };
+  const [senderPolicies, shadowModeEnabled, allowlistOnly] = await Promise.all([
+    db.senderPolicy.findMany(),
+    isShadowModeEnabled(),
+    getAllowlistOnlyAccounts(),
+  ]);
+  return { senderPolicies, shadowModeEnabled, allowlistOnly };
+}
+
+/** The user already confirmed this exact address as wanted mail on this box. */
+async function isSenderConfirmed(accountId: string, fromAddress: string): Promise<boolean> {
+  const confirmed = await db.message.findFirst({
+    where: { accountId, fromAddress, userVerdict: { in: ["LEGITIMATE", "NEWSLETTER"] } },
+    select: { id: true },
+  });
+  return confirmed !== null;
 }
 
 function resolvePolicyOverride(policies: SenderPolicy[], accountId: string, fromAddress: string, fromDomain: string): PolicyOverride {
@@ -51,7 +70,18 @@ export async function classifyAndPersist(messageId: string, context?: ClassifyCo
   });
   const features = extractFeatures(message, { isFirstContact: !earlierFromSender });
   const learned = policyOverride ? null : await predictForMessage(message);
-  const computed = classify(features, policyOverride, learned);
+  const scored = classify(features, policyOverride, learned);
+  const enabledSince = ctx.allowlistOnly.get(message.accountId);
+  const unknownUnderAllowlist =
+    enabledSince !== undefined &&
+    isUnknownSenderUnderAllowlist({
+      enabledSince,
+      receivedAt: message.receivedAt,
+      policyOverride,
+      userVerdict: message.userVerdict,
+      senderConfirmed: await isSenderConfirmed(message.accountId, message.fromAddress),
+    });
+  const computed = unknownUnderAllowlist ? quarantineAsUnknownSender(scored) : scored;
   // A verdict the user set by hand on this exact message is final — a later re-scan must not undo it.
   const result =
     message.userVerdict && !policyOverride

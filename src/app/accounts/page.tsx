@@ -1,6 +1,6 @@
 import { Users, Plus } from "lucide-react";
 import { db } from "@/lib/db";
-import { isShadowModeEnabled } from "@/lib/settings/app-settings";
+import { getAllowlistOnlyAccounts, isShadowModeEnabled } from "@/lib/settings/app-settings";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FlashBanner } from "@/components/accounts/FlashBanner";
 import { AccountRow } from "@/components/accounts/AccountRow";
@@ -19,10 +19,11 @@ export default async function AccountsPage({
   searchParams: Promise<{ connected?: string; error?: string }>;
 }) {
   const { connected, error } = await searchParams;
-  const [accounts, shadowMode, backup] = await Promise.all([
+  const [accounts, shadowMode, backup, allowlistOnly] = await Promise.all([
     db.account.findMany({ orderBy: { createdAt: "asc" } }),
     isShadowModeEnabled(),
     currentBackupStatus(),
+    getAllowlistOnlyAccounts(),
   ]);
   const needsAttention = accounts.filter((a) => a.status !== "ACTIVE").length;
 
@@ -87,6 +88,7 @@ export default async function AccountsPage({
                   colorToken={account.colorToken}
                   status={account.status}
                   lastSyncAt={account.lastSyncAt}
+                  allowlistOnlySince={allowlistOnly.get(account.id) ?? null}
                 />
               ))}
             </div>
