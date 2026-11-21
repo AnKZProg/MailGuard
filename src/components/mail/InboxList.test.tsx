@@ -27,6 +27,7 @@ function row(id: string, overrides: Partial<InboxRow> = {}): InboxRow {
     subject: `Subject ${id}`,
     snippet: null,
     verdict: "LEGITIMATE",
+    securityAlert: false,
     isRead: false,
     dateLabel: "10:00",
     dateTitle: "",

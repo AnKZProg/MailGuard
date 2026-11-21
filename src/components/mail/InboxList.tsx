@@ -215,6 +215,11 @@ export function InboxList({ rows, openId, closeHref, loadMoreHref }: Props) {
                           </span>
                           {row.snippet && <span className="text-text-tertiary"> — {row.snippet}</span>}
                         </p>
+                        {row.securityAlert && (
+                          <span className="inline-flex h-5 shrink-0 items-center rounded-full bg-verdict-phishing-soft px-2 text-[11px] font-medium text-verdict-phishing">
+                            Sécurité
+                          </span>
+                        )}
                         {row.verdict && row.verdict !== "LEGITIMATE" && <VerdictBadge verdict={row.verdict} />}
                       </div>
                     </div>

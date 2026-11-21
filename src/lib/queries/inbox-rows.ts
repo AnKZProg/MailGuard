@@ -16,9 +16,14 @@ export type InboxRow = {
   group: DateGroup;
   accountEmail: string;
   accountColorVar: string;
+  /** Authenticated Steam/Discord login or password notice. */
+  securityAlert: boolean;
 };
 
-type ListedMessage = Message & { account: { emailAddress: string; colorToken: string } };
+type ListedMessage = Message & {
+  account: { emailAddress: string; colorToken: string };
+  signals?: { id: string }[];
+};
 
 const NAMED_ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
 // Marketing mails pad their preview with invisible characters so the client shows no snippet;
@@ -55,5 +60,6 @@ export function toInboxRows(messages: ListedMessage[], query: InboxQuery, now: D
     group: mailDateGroup(m.receivedAt, now),
     accountEmail: m.account.emailAddress,
     accountColorVar: `var(--${m.account.colorToken.replace("account-", "account-color-")})`,
+    securityAlert: (m.signals?.length ?? 0) > 0,
   }));
 }

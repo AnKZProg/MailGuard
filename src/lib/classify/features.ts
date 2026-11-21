@@ -19,6 +19,9 @@ export type MessageFeatures = {
   authSpfFail: boolean;
   authDkimFail: boolean;
   authDmarcFail: boolean;
+  /** Explicit pass (null/unknown is neither pass nor fail). */
+  authDkimPass: boolean;
+  authDmarcPass: boolean;
   providerSpamFlag: boolean;
 };
 
@@ -66,6 +69,8 @@ export function extractFeatures(message: ClassifiableMessage, context: FeatureCo
     authSpfFail: message.authSpf !== null && message.authSpf !== "pass",
     authDkimFail: message.authDkim !== null && message.authDkim !== "pass",
     authDmarcFail: message.authDmarc !== null && message.authDmarc !== "pass",
+    authDkimPass: message.authDkim === "pass",
+    authDmarcPass: message.authDmarc === "pass",
     providerSpamFlag: message.providerSpamFlag,
   };
 }

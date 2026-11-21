@@ -1,3 +1,4 @@
+import { SECURITY_ALERT_RULE_ID } from "@/lib/classify/security-alert";
 import { db } from "@/lib/db";
 import type { Verdict, MessageState } from "@prisma/client";
 
@@ -38,7 +39,10 @@ export async function listMessages(filters: MessageListFilters) {
           }
         : {}),
     },
-    include: { account: { select: { emailAddress: true, provider: true, colorToken: true } } },
+    include: {
+      account: { select: { emailAddress: true, provider: true, colorToken: true } },
+      signals: { where: { ruleId: SECURITY_ALERT_RULE_ID }, select: { id: true } },
+    },
     orderBy: { receivedAt: "desc" },
     take: PAGE_SIZE + 1,
     ...(filters.cursor ? { cursor: { id: filters.cursor }, skip: 1 } : {}),

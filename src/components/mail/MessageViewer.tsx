@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { longMailDate } from "@/lib/format/mail-date";
 import { isFreemailDomain } from "@/lib/classify/learner/bayes";
 import { SignalExplainer } from "./SignalExplainer";
+import { SECURITY_ALERT_RULE_ID } from "@/lib/classify/security-alert";
 import { MessageBody } from "./MessageBody";
 import { VerdictCorrection } from "./VerdictCorrection";
 import { SenderAvatar } from "./SenderAvatar";
@@ -32,6 +33,8 @@ export async function MessageViewer({ messageId, closeHref }: { messageId: strin
       </section>
     );
   }
+
+  const securityAlert = message.signals.find((s) => s.ruleId === SECURITY_ALERT_RULE_ID);
 
   // Blocking "gmail.com" would block every Gmail user on earth — scope to the address for shared providers.
   const senderScope = isFreemailDomain(message.fromDomain) ? "ADDRESS" : "DOMAIN";
@@ -106,6 +109,11 @@ export async function MessageViewer({ messageId, closeHref }: { messageId: strin
             <time className="hidden shrink-0 pt-0.5 text-[12px] text-text-tertiary sm:block">{longMailDate(message.receivedAt)}</time>
           </div>
 
+          {securityAlert && (
+            <p className="rounded-md border border-verdict-phishing/30 bg-verdict-phishing-soft px-3.5 py-2.5 text-[13px] text-verdict-phishing">
+              {securityAlert.detail}
+            </p>
+          )}
           <div className="flex flex-col gap-2 rounded-lg border border-border-subtle bg-surface-1 px-3 py-2.5">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <VerdictCorrection

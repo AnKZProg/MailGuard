@@ -5,6 +5,7 @@ import { getAllowlistOnlyAccounts, isShadowModeEnabled } from "@/lib/settings/ap
 import { isUnknownSenderUnderAllowlist, quarantineAsUnknownSender } from "@/lib/classify/allowlist-only";
 import { quarantineMessage } from "@/lib/quarantine/quarantine";
 import { archiveNewsletterMessage } from "@/lib/classify/archive-newsletter";
+import { detectSecurityAlert, keepSecurityAlert } from "@/lib/classify/security-alert";
 import { predictForMessage } from "@/lib/classify/learner/store";
 import type { SenderPolicy } from "@prisma/client";
 
@@ -81,7 +82,11 @@ export async function classifyAndPersist(messageId: string, context?: ClassifyCo
       userVerdict: message.userVerdict,
       senderConfirmed: await isSenderConfirmed(message.accountId, message.fromAddress),
     });
-  const computed = unknownUnderAllowlist ? quarantineAsUnknownSender(scored) : scored;
+  const filtered = unknownUnderAllowlist ? quarantineAsUnknownSender(scored) : scored;
+  // An authenticated Steam/Discord login or password notice must reach the inbox, even
+  // in allowlist-only mode: it is how the user learns an account is under attack.
+  const securityPlatform = policyOverride === "BLOCK" ? null : detectSecurityAlert(features);
+  const computed = securityPlatform ? keepSecurityAlert(filtered, securityPlatform) : filtered;
   // A verdict the user set by hand on this exact message is final — a later re-scan must not undo it.
   const result =
     message.userVerdict && !policyOverride

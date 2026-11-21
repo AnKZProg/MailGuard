@@ -28,6 +28,9 @@ export const PROTECTED_DOMAINS = [
   "google.com",
   "apple.com",
   "netflix.com",
+  "steampowered.com",
+  "steamcommunity.com",
+  "discord.com",
 ];
 
 /**
@@ -38,7 +41,15 @@ export const PROTECTED_DOMAINS = [
  * lists every legitimate domain (or domain family) that mention is allowed to
  * come from; a subject/display-name mention from anywhere else is the signal.
  */
-export const BRAND_ALIASES: { brand: string; domains: string[] }[] = [
+export const BRAND_ALIASES: {
+  brand: string;
+  domains: string[];
+  /** Checked against the display name only: game stores and newsletters name these
+   * platforms in subjects all the time ("ta clé Steam", "rejoins notre Discord"). */
+  displayNameOnly?: boolean;
+}[] = [
+  { brand: "steam", domains: ["steampowered.com", "steamcommunity.com", "valvesoftware.com"], displayNameOnly: true },
+  { brand: "discord", domains: ["discord.com", "discordapp.com"], displayNameOnly: true },
   { brand: "amazon", domains: ["amazon.com", "amazon.fr"] },
   { brand: "prime video", domains: ["amazon.com", "amazon.fr", "primevideo.com"] },
   { brand: "paypal", domains: ["paypal.com", "paypal.fr"] },

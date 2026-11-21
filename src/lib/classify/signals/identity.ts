@@ -77,8 +77,8 @@ export function identitySignals(features: MessageFeatures): Signal[] {
   // A subject mentioning a brand from a domain with zero relation to that brand
   // doesn't need a lookalike domain to be phishing — "PrimeVideo" sent from
   // approve-it.net has no textual resemblance to amazon.com at all.
-  for (const { brand, domains } of BRAND_ALIASES) {
-    if (domainMatchesAny(features.fromDomain, domains)) continue;
+  for (const { brand, domains, displayNameOnly } of BRAND_ALIASES) {
+    if (displayNameOnly || domainMatchesAny(features.fromDomain, domains)) continue;
 
     if (mentionsBrand(features.subjectLower, brand)) {
       signals.push({
@@ -94,8 +94,8 @@ export function identitySignals(features: MessageFeatures): Signal[] {
   // Newsletters legitimately talk about other brands; a one-to-one mail whose
   // preview invokes a brand it wasn't sent by is a weaker but real tell.
   if (!features.isBulk) {
-    for (const { brand, domains } of BRAND_ALIASES) {
-      if (domainMatchesAny(features.fromDomain, domains)) continue;
+    for (const { brand, domains, displayNameOnly } of BRAND_ALIASES) {
+      if (displayNameOnly || domainMatchesAny(features.fromDomain, domains)) continue;
       if (mentionsBrand(features.snippetLower, brand)) {
         signals.push({
           ruleId: "identity.brand_in_preview_domain_mismatch",
